@@ -1,0 +1,3569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Emoji Gacha Simulator v2.7.0</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Screen shake */
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-10px, 8px) rotate(-1.5deg); }
+      40% { transform: translate(10px, -8px) rotate(1.5deg); }
+      60% { transform: translate(-6px, -4px) rotate(-0.5deg); }
+      80% { transform: translate(6px, 5px) rotate(0.5deg); }
+    }
+    .shake-screen { animation: screenShake 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+
+    /* Gradual Cinematic Laptop Zoom */
+    @keyframes smoothLaptopZoomAnim {
+      0% { transform: scale(1); }
+      25% { transform: scale(1.06) rotate(-1deg); }
+      50% { transform: scale(1.25) rotate(1deg); }
+      75% { transform: scale(2.0); }
+      100% { transform: scale(5.8); }
+    }
+    .laptop-smooth-zoom {
+      animation: smoothLaptopZoomAnim 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    /* Center Snap Animation for SSR / UR */
+    @keyframes cardFloatAndSlam {
+      0% { transform: scale(0.2) translateY(350px); opacity: 0; filter: brightness(2); }
+      65% { transform: scale(1.15) translateY(-15px); opacity: 1; filter: brightness(1.2); }
+      80% { transform: scale(0.95) translateY(5px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; filter: brightness(1); }
+    }
+    .card-float-slam {
+      animation: cardFloatAndSlam 0.6s cubic-bezier(0.2, 0.85, 0.32, 1.2) forwards;
+    }
+
+    /* Card bounce pop for common */
+    @keyframes cardPop {
+      0% { transform: scale(0.6) translateY(40px); opacity: 0; }
+      70% { transform: scale(1.04) translateY(-4px); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .card-pop-in { animation: cardPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    /* Fakeout card glitch */
+    @keyframes fakeoutJitter {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-3px, 2px) rotate(-1deg); }
+      50% { transform: translate(3px, -2px) rotate(1deg); }
+      75% { transform: translate(-2px, -2px); }
+    }
+    .fakeout-card {
+      animation: fakeoutJitter 0.12s infinite;
+    }
+
+    /* Seamless circular rotating rays */
+    @keyframes rotateRays {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .god-rays {
+      width: 250vmax;
+      height: 250vmax;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: conic-gradient(from 0deg, transparent 0deg, rgba(236, 72, 153, 0.35) 20deg, transparent 40deg, rgba(139, 92, 246, 0.35) 60deg, transparent 80deg, rgba(56, 189, 248, 0.35) 100deg, transparent 120deg, rgba(251, 191, 36, 0.35) 140deg, transparent 160deg, rgba(236, 72, 153, 0.35) 180deg, transparent 200deg, rgba(139, 92, 246, 0.35) 220deg, transparent 240deg, rgba(56, 189, 248, 0.35) 260deg, transparent 280deg, rgba(251, 191, 36, 0.35) 300deg, transparent 320deg, rgba(236, 72, 153, 0.35) 340deg, transparent 360deg);
+      animation: rotateRays 20s linear infinite;
+      mask-image: radial-gradient(circle, rgba(0,0,0,1) 15%, rgba(0,0,0,0.6) 45%, transparent 68%);
+      -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 15%, rgba(0,0,0,0.6) 45%, transparent 68%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Rainbow Text Gradient */
+    .rainbow-text {
+      background: linear-gradient(90deg, #f43f5e, #f59e0b, #10b981, #06b6d4, #8b5cf6, #ec4899);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      animation: rainbowShift 3s linear infinite;
+    }
+    @keyframes rainbowShift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* Tier Glows */
+    .glow-ur {
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, rgba(15, 23, 42, 0.95) 75%);
+      box-shadow: 0 0 45px rgba(236, 72, 153, 0.65), 0 0 20px rgba(56, 189, 248, 0.4);
+      border-color: #f472b6;
+    }
+    .glow-ssr {
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, rgba(15, 23, 42, 0.95) 75%);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.6);
+      border-color: #fbbf24;
+    }
+    .glow-sr {
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.22) 0%, rgba(15, 23, 42, 0.95) 75%);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
+      border-color: #c084fc;
+    }
+    .glow-r {
+      background: radial-gradient(circle, rgba(100, 116, 139, 0.15) 0%, rgba(15, 23, 42, 0.95) 75%);
+      border-color: #475569;
+    }
+
+    /* Zen Mode Hide UI */
+    body.ui-hidden #mainHeader,
+    body.ui-hidden #mainContainer,
+    body.ui-hidden #zenModeTriggerBtn {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    body.ui-hidden #wallpaperDimOverlay {
+      opacity: 0 !important;
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+
+    /* Screensaver Sparkle */
+    .shining-sparkle {
+      filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.9)) drop-shadow(0 0 25px rgba(236, 72, 153, 0.8));
+      animation: pulseSparkle 1.2s infinite alternate ease-in-out;
+    }
+    @keyframes pulseSparkle {
+      0% { transform: scale(1) rotate(0deg); }
+      100% { transform: scale(1.35) rotate(15deg); }
+    }
+  </style>
+</head>
+<body id="appBody" class="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-indigo-500 selection:text-white pb-20 select-none relative overflow-x-hidden" onclick="handleGlobalClick(event)">
+
+  <!-- ================= WALLPAPER LAYERS ================= -->
+  <div id="wallpaperLayer" class="fixed inset-0 pointer-events-none z-0 bg-cover transition-opacity duration-500 opacity-0"></div>
+  <div id="wallpaperDimOverlay" class="fixed inset-0 pointer-events-none z-0 bg-slate-950/70 transition-opacity duration-300"></div>
+
+  <!-- Audio Element for Custom BGM -->
+  <audio id="bgmAudio" loop preload="auto"></audio>
+
+  <!-- ================= TOP HEADER (HORIZONTALLY SCROLLABLE WITH CLOCK) ================= -->
+  <header id="mainHeader" class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-2.5 px-3 sm:px-6 shadow-lg transition-opacity duration-300">
+    <div class="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar py-0.5">
+      
+      <!-- Brand & Mascot (Clickable Mascot!) -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="openMascotModal()" id="mascotIconBtn" class="text-2xl hover:scale-110 active:scale-95 transition" title="Change Mascot Emoji">
+          ✨
+        </button>
+        <div>
+          <h1 class="font-black text-sm sm:text-base tracking-wide bg-gradient-to-r from-pink-400 via-amber-400 to-indigo-400 bg-clip-text text-transparent leading-none">
+            EMOJI GACHA
+          </h1>
+          <button onclick="openPatchNotesModal()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono px-1.5 py-0.5 rounded border border-slate-700 flex items-center gap-1 mt-0.5">
+            <span>📜 v2.7.0</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Real-time Digital Clock -->
+      <div class="flex items-center bg-slate-800/80 border border-slate-700 px-2.5 py-1 rounded-xl text-xs font-mono text-slate-300 shadow-inner shrink-0">
+        <span class="mr-1.5 text-slate-400">🕒</span>
+        <span id="digitalClock">-- --- ---- · --:--:-- · UTC+0 · Local</span>
+      </div>
+
+      <!-- Actions Bar -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <!-- Small Share Button (Toggled in Settings) -->
+        <button id="headerShareBtn" onclick="triggerShare()" class="bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-300 text-xs font-bold px-2.5 py-1.5 rounded-xl transition active:scale-95 shadow-sm flex items-center gap-1">
+          <span>📤</span>
+          <span>Share</span>
+        </button>
+        <button onclick="openCodexModal()" class="bg-indigo-900/40 hover:bg-indigo-800/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold px-2.5 py-1.5 rounded-xl transition active:scale-95 shadow-sm flex items-center gap-1">
+          <span>📖</span>
+          <span>Codex</span>
+        </button>
+        <button onclick="openRatesModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold px-2.5 py-1.5 rounded-xl transition active:scale-95 shadow-sm">
+          📊 Rates
+        </button>
+        <button onclick="openCalendarModal()" class="bg-indigo-600/25 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-xs font-bold px-2.5 py-1.5 rounded-xl transition active:scale-95 shadow-sm">
+          📅 Calendar
+        </button>
+        <button onclick="openPullLogModal()" class="bg-indigo-600/25 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-xs font-bold px-2.5 py-1.5 rounded-xl transition active:scale-95 shadow-sm">
+          📜 Log
+        </button>
+        <button onclick="openAchievementsModal()" class="bg-indigo-600/25 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 text-xs font-bold px-2.5 py-1.5 rounded-xl transition active:scale-95 shadow-sm">
+          🏅 Awards
+        </button>
+        <button onclick="openSettingsModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold p-1.5 rounded-xl transition active:scale-95 shadow-sm" title="Settings">
+          ⚙️
+        </button>
+
+        <!-- Gems Display -->
+        <div class="flex items-center bg-slate-800/90 border border-slate-700 px-3 py-1.5 rounded-full shadow-inner ml-1">
+          <span class="mr-1 text-base">💎</span>
+          <span id="gemCount" class="font-extrabold text-amber-300 text-xs sm:text-sm font-mono">0</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN LAYOUT CONTAINER ================= -->
+  <main id="mainContainer" class="max-w-4xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-300 relative z-10">
+    
+    <!-- LEFT: Banner & Pull Controls -->
+    <section id="bannerSection" class="md:col-span-2 space-y-6">
+
+      <!-- Banner Tabs -->
+      <div class="flex items-center gap-2 justify-center">
+        <button class="bannerTabBtn text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 bg-indigo-600 border-indigo-400 text-white" data-banner-id="cosmos" onclick="switchBanner('cosmos')">💠 Celestial Cosmos</button>
+        <button class="bannerTabBtn text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 bg-slate-800 border-slate-700 text-slate-400 hover:text-white" data-banner-id="faces" onclick="switchBanner('faces')">🥳 Feelings Parade</button>
+      </div>
+
+      <!-- Banner Box -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-indigo-950/60 to-slate-900 border border-pink-500/30 p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+        <div class="absolute -top-20 -left-20 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="inline-block px-3 py-1 rounded-full bg-pink-500/20 border border-pink-400/40 text-pink-300 text-xs font-bold uppercase tracking-wider mb-2">
+          UR Rate 0.80% · SSR Rate 3.20%
+        </div>
+        <h2 id="bannerTitle" class="text-2xl sm:text-3xl font-black text-white mb-2">Celestial Cosmos</h2>
+        <p id="bannerTagline" class="text-slate-400 text-xs sm:text-sm max-w-sm mb-6">
+          10-Pull guarantees SR or higher! Guaranteed SSR at 40, UR at 100 pulls.
+        </p>
+
+        <!-- Preview Emblem (Cycling Emojis) -->
+        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-pink-400/50 bg-slate-900 flex items-center justify-center text-5xl sm:text-6xl shadow-inner mb-6 shadow-pink-500/20 relative overflow-hidden">
+          <div id="bannerPreviewEmoji" class="transition-opacity duration-300 transform scale-100">
+            💠
+          </div>
+        </div>
+
+        <!-- Pick-up Target Selector (2x rate) -->
+        <div class="w-full max-w-md mb-6">
+          <div id="focusTargetLabel" class="text-[11px] text-slate-400 mb-1.5 font-semibold">🎯 Pick-up Target — tap a UR to double its rate</div>
+          <div id="focusTargetRow" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1"></div>
+        </div>
+
+        <!-- Pity info (UR + SSR Pity) -->
+        <div class="text-xs text-slate-400 mb-6 flex flex-wrap justify-center gap-4 font-mono">
+          <span>SSR Pity: <strong id="ssrPityCount" class="text-amber-400 font-bold">0</strong>/40</span>
+          <span>UR Pity: <strong id="urPityCount" class="text-pink-400 font-bold">0</strong>/100</span>
+          <span>Total: <strong id="totalPullsCount" class="text-indigo-400 font-bold">0</strong></span>
+        </div>
+
+        <!-- Summon Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+          <button onclick="startSummon(1)" class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-bold py-3.5 px-4 rounded-xl transition shadow flex justify-center items-center gap-2">
+            <span>Pull 1x</span>
+            <span class="text-amber-400 text-sm font-semibold font-mono">100 💎</span>
+          </button>
+          <button onclick="startSummon(10)" class="flex-1 bg-gradient-to-r from-pink-500 via-amber-500 to-indigo-600 hover:opacity-90 active:scale-95 font-bold py-3.5 px-4 rounded-xl transition shadow-lg shadow-pink-500/25 flex justify-center items-center gap-2 text-white">
+            <span>Pull 10x (SR+ Guaran.)</span>
+            <span class="text-amber-200 text-sm font-semibold font-mono">1,000 💎</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory / Collection Section -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-bold text-lg text-slate-200 flex items-center gap-2">
+                <span>🎒</span> Collection (<span id="uniqueCount">0</span>)
+              </h3>
+              <!-- PROMOTE ALL BUTTON -->
+              <button id="promoteAllBtn" onclick="promoteAllEmojis()" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 active:scale-95 shadow-md shadow-amber-500/20 transition cursor-pointer">
+                <span>⚡</span>
+                <span id="promoteAllBtnText">Promote All</span>
+              </button>
+            </div>
+            <span class="text-[11px] text-slate-400">💡 Tap any card to upgrade stars or 📌 Pin to Top!</span>
+          </div>
+
+          <!-- Filter Tabs -->
+          <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs font-bold">
+            <button onclick="setFilter('ALL')" id="filterBtnALL" class="px-2 py-1 rounded-lg bg-indigo-600 text-white transition">ALL</button>
+            <button onclick="setFilter('UR')" id="filterBtnUR" class="px-2 py-1 rounded-lg text-pink-400 hover:bg-slate-700 transition">UR</button>
+            <button onclick="setFilter('SSR')" id="filterBtnSSR" class="px-2 py-1 rounded-lg text-amber-400 hover:bg-slate-700 transition">SSR</button>
+            <button onclick="setFilter('SR')" id="filterBtnSR" class="px-2 py-1 rounded-lg text-purple-400 hover:bg-slate-700 transition">SR</button>
+            <button onclick="setFilter('R')" id="filterBtnR" class="px-2 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition">R</button>
+          </div>
+        </div>
+        <div id="inventoryGrid" class="grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-96 overflow-y-auto pr-1"></div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT: Quests & Redeem Code -->
+    <aside id="asideSection" class="space-y-6">
+      
+      <!-- Quests Section -->
+      <div id="questsSection" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <h3 class="font-bold text-lg text-slate-200 flex items-center gap-2">
+          <span>📜</span> Daily & Normal Quests
+        </h3>
+
+        <!-- Quest 1: Daily Login -->
+        <div class="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-white">Daily Login</div>
+            <div class="text-xs text-amber-400 font-bold font-mono">+5,000 Gems</div>
+          </div>
+          <button id="dailyBtn" onclick="claimDaily()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 px-3 rounded-lg active:scale-95 transition">
+            Claim
+          </button>
+        </div>
+
+        <!-- Quest 2: Daily 10 Pulls -->
+        <div class="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-white">Daily 10 Pulls</div>
+            <div class="text-xs text-amber-400 font-bold font-mono">+8,000 Gems</div>
+          </div>
+          <button id="dailyPullQuestBtn" onclick="claimDailyPullQuest()" class="text-xs bg-slate-700 text-slate-400 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed transition">
+            0/10
+          </button>
+        </div>
+
+        <!-- Quest 3: Daily Promote -->
+        <div class="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex items-center justify-between">
+          <div>
+            <div class="text-sm font-semibold text-white">Daily Star Promote</div>
+            <div class="text-xs text-amber-400 font-bold font-mono">+6,000 Gems</div>
+          </div>
+          <button id="dailyPromoteQuestBtn" onclick="claimDailyPromoteQuest()" class="text-xs bg-slate-700 text-slate-400 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed transition">
+            0/1
+          </button>
+        </div>
+
+        <!-- Quest 4: Mining Repeatable -->
+        <div class="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl space-y-2">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-sm font-semibold text-white">Mine Crystal</div>
+              <div class="text-xs text-amber-400 font-bold font-mono">+3,000 Gems</div>
+            </div>
+            <span id="mineProgressText" class="text-xs text-slate-400 font-mono">0/5 Hits</span>
+          </div>
+          <button onclick="mineClick()" class="w-full text-xs bg-slate-700 hover:bg-slate-600 active:scale-95 border border-slate-600 text-slate-200 font-bold py-2 px-3 rounded-lg transition flex justify-center items-center gap-2">
+            <span>⛏️ Tap to Mine!</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Redeem Code -->
+      <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+        <h3 class="font-bold text-lg text-slate-200 flex items-center gap-2">
+          <span>🏷️</span> Redeem Code
+        </h3>
+        <p class="text-xs text-slate-400">Try codes: <code class="text-indigo-400 font-mono">INFLATION</code>, <code class="text-indigo-400 font-mono">LUCKY777</code>, <code class="text-indigo-400 font-mono">JAIMINI</code></p>
+        
+        <div class="flex gap-2">
+          <input id="couponInput" type="text" placeholder="ENTER CODE" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm uppercase font-mono w-full focus:outline-none focus:border-indigo-500 text-white" />
+          <button onclick="redeemCoupon()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 font-bold px-4 py-2 text-sm rounded-xl text-white transition shrink-0">
+            Redeem
+          </button>
+        </div>
+        <div id="couponMsg" class="text-xs min-h-[1rem]"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ================= FLOATING HIDE UI BUTTON (ZEN MODE) ================= -->
+  <button id="zenModeTriggerBtn" onclick="toggleHideUI(event)" class="fixed bottom-4 right-4 z-40 bg-slate-800/80 hover:bg-slate-700 backdrop-blur-md border border-slate-700 text-slate-300 p-3 rounded-full shadow-2xl active:scale-90 transition flex items-center justify-center text-base" title="Hide UI (Zen Wallpaper Mode)">
+    👁️
+  </button>
+
+  <!-- ================= AFK SCREENSAVER OVERLAY (5 MINUTE TIMEOUT) ================= -->
+  <div id="screensaverStage" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col justify-between p-6 hidden select-none overflow-hidden">
+    <div class="text-center pt-2">
+      <h4 class="text-xs font-mono tracking-widest text-slate-400 uppercase">AFK Cosmic Shower (5m Idle)</h4>
+      <p class="text-[11px] text-amber-300">Tap shining emojis to catch bonus Gems! ✨</p>
+    </div>
+
+    <div id="screensaverRainBox" class="absolute inset-0 pointer-events-auto overflow-hidden"></div>
+
+    <div class="relative z-20 mx-auto w-72 sm:w-80 h-12 bg-slate-900/90 border border-slate-700 rounded-full flex items-center px-1.5 shadow-2xl overflow-hidden">
+      <div id="sliderTrackText" class="absolute inset-0 flex items-center justify-center text-xs font-mono font-bold text-slate-400 tracking-wider pointer-events-none">
+        SLIDE TO EXIT ➔
+      </div>
+      <div id="sliderThumb" class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white cursor-grab active:cursor-grabbing shadow-lg select-none z-10 transition-transform duration-75">
+        🔒
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= INTRO ANIMATION: LAPTOP ZOOM ================= -->
+  <div id="laptopStage" class="fixed inset-0 bg-slate-950 z-50 flex flex-col items-center justify-center hidden select-none overflow-hidden">
+    <div id="laptopContainer" class="relative flex items-center justify-center">
+      <div id="laptopRadialBloom" class="absolute w-[450px] h-[450px] rounded-full pointer-events-none opacity-0 transition-opacity duration-700 z-0"></div>
+      <div id="laptopIcon" class="text-8xl sm:text-9xl relative z-10 filter drop-shadow-2xl">
+        💻
+      </div>
+    </div>
+    <div id="laptopStatusMsg" class="mt-12 font-mono tracking-widest text-xs uppercase text-slate-400 animate-pulse relative z-20">
+      CONNECTING TO QUANTUM RELIC DATABASE...
+    </div>
+  </div>
+
+  <!-- ================= ANIMATION 1: CARD-BY-CARD REVEAL ================= -->
+  <div id="revealStage" class="fixed inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center hidden p-4 select-none backdrop-blur-md" onclick="onRevealScreenTapped(event)">
+    <div class="absolute top-6 left-6 right-6 flex justify-between items-center pointer-events-auto">
+      <div id="revealProgressText" class="text-xs sm:text-sm font-bold tracking-widest text-slate-400 bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-800 font-mono">
+        PULL 1 / 10
+      </div>
+      <button onclick="skipAllReveals()" class="text-xs sm:text-sm font-bold bg-slate-800/80 hover:bg-slate-700 border border-slate-600 text-slate-300 py-1.5 px-4 rounded-full transition active:scale-90 shadow">
+        SKIP ⏩
+      </button>
+    </div>
+
+    <!-- Center Card Stage -->
+    <div id="revealCardWrapper" class="relative flex items-center justify-center">
+      <div id="revealCard" class="card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 cursor-pointer">
+        <div id="revealCardStars" class="text-sm tracking-widest mb-3">⭐</div>
+        <div id="revealCardEmoji" class="text-8xl sm:text-9xl mb-4 filter drop-shadow-lg">👑</div>
+        <div id="revealCardName" class="text-xl sm:text-2xl font-black text-white tracking-wide truncate max-w-full">Crown</div>
+        
+        <div class="flex items-center gap-2 mt-3">
+          <span id="revealCardTierBadge" class="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-800">
+            UR
+          </span>
+          <span id="revealUpgradeNotice" class="text-[11px] font-bold px-2 py-0.5 rounded-full hidden"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="revealCardHintText" class="mt-8 text-xs tracking-widest text-slate-400 animate-pulse pointer-events-none font-mono">
+      [ TAP SCREEN TO NEXT ]
+    </div>
+  </div>
+
+  <!-- ================= UR TYPING TERMINAL CUTSCENE ================= -->
+  <div id="urTerminalStage" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center hidden select-none p-6">
+    <div class="text-center space-y-4 max-w-md">
+      <div class="text-xs font-mono text-pink-400/80 tracking-widest uppercase">Decryption in progress</div>
+      <div class="text-2xl sm:text-4xl font-mono font-black text-pink-300 tracking-wider flex items-center justify-center min-h-[3rem]">
+        <span id="urTypingText" class="whitespace-pre"></span>
+        <span class="animate-pulse text-white font-normal ml-1">|</span>
+      </div>
+      <div id="urImpactEmojiPreview" class="text-7xl pt-4 opacity-0 transition-opacity duration-300 transform scale-50"></div>
+    </div>
+  </div>
+
+  <!-- ================= ANIMATION 2: UR GOD-RAYS CUTSCENE ================= -->
+  <div id="cutsceneStage" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center hidden overflow-hidden select-none" onclick="dismissCutscene()">
+    <div class="god-rays"></div>
+    <div class="absolute inset-0 bg-radial from-pink-500/25 via-transparent to-black pointer-events-none"></div>
+
+    <div class="relative z-10 text-center space-y-2 mb-6 pointer-events-none">
+      <div class="text-pink-400 font-extrabold tracking-[0.4em] text-xs sm:text-sm uppercase animate-pulse">
+        ★ ★ ★ ★ ★
+      </div>
+      <h2 class="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-amber-300 to-cyan-300 drop-shadow-[0_0_30px_rgba(236,72,153,0.9)]">
+        UR SUMMON!
+      </h2>
+    </div>
+
+    <div class="relative z-10 flex flex-col items-center justify-center p-6 pointer-events-none">
+      <div id="cutsceneEmoji" class="text-8xl sm:text-9xl filter drop-shadow-[0_0_45px_rgba(236,72,153,0.9)] animate-bounce">
+        💠
+      </div>
+      <div id="cutsceneItemName" class="mt-5 text-xl sm:text-2xl font-black text-white tracking-wider bg-slate-900/90 px-6 py-2 rounded-full border border-pink-400/60 shadow-2xl">
+        Diamond with a Dot
+      </div>
+    </div>
+
+    <div class="relative z-10 mt-8 text-slate-400 text-xs sm:text-sm tracking-widest uppercase animate-pulse pointer-events-none font-mono">
+      [ Tap to continue ]
+    </div>
+  </div>
+
+  <!-- ================= SUMMARY MODAL ================= -->
+  <div id="resultModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-lg w-full rounded-3xl p-6 shadow-2xl text-center relative overflow-hidden">
+      <h3 class="text-xl font-bold mb-3 text-white">Summon Results</h3>
+      <div id="modalItemsGrid" class="grid grid-cols-5 gap-3 mb-5 max-h-72 overflow-y-auto p-1"></div>
+      
+      <div class="space-y-2.5">
+        <div class="flex gap-2">
+          <button onclick="closeSummaryModal(); startSummon(1);" class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-white font-bold py-2.5 rounded-xl transition text-xs flex justify-center items-center gap-1.5 shadow">
+            <span>Pull 1x Again</span>
+            <span class="text-amber-400 font-mono font-semibold">100 💎</span>
+          </button>
+          <button onclick="closeSummaryModal(); startSummon(10);" class="flex-1 bg-gradient-to-r from-pink-500 via-amber-500 to-indigo-600 hover:opacity-90 active:scale-95 text-white font-bold py-2.5 rounded-xl transition text-xs flex justify-center items-center gap-1.5 shadow-lg shadow-pink-500/20">
+            <span>Pull 10x Again</span>
+            <span class="text-amber-200 font-mono font-semibold">1,000 💎</span>
+          </button>
+        </div>
+        <button onclick="closeSummaryModal()" class="w-full bg-slate-800/80 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition text-xs">
+          Collect & Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MASCOT SELECTOR MODAL ================= -->
+  <div id="mascotModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-sm w-full rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-black text-white flex items-center gap-2">
+          <span>✨</span> Choose Header Mascot
+        </h3>
+        <button onclick="closeMascotModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-[11px] text-slate-400">Select any unlocked emoji from your collection:</p>
+      <div id="mascotGrid" class="grid grid-cols-5 gap-2 max-h-60 overflow-y-auto pr-1"></div>
+      <button onclick="closeMascotModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= EMOJI CODEX MODAL ================= -->
+  <div id="codexModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-indigo-500/40 max-w-2xl w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-lg font-black text-white flex items-center gap-2">
+            <span>📖</span> Emoji Codex
+          </h3>
+          <p id="codexProgressText" class="text-xs text-indigo-300 font-mono mt-0.5">Discovered: 0 / 115 (0%)</p>
+        </div>
+        <button onclick="closeCodexModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="flex items-center gap-1.5 my-3 text-xs font-bold bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+        <button onclick="setCodexFilter('ALL')" id="codexTab_ALL" class="px-3 py-1 rounded-lg bg-indigo-600 text-white transition">ALL</button>
+        <button onclick="setCodexFilter('UR')" id="codexTab_UR" class="px-3 py-1 rounded-lg text-pink-400 hover:bg-slate-700 transition">UR</button>
+        <button onclick="setCodexFilter('SSR')" id="codexTab_SSR" class="px-3 py-1 rounded-lg text-amber-400 hover:bg-slate-700 transition">SSR</button>
+        <button onclick="setCodexFilter('SR')" id="codexTab_SR" class="px-3 py-1 rounded-lg text-purple-400 hover:bg-slate-700 transition">SR</button>
+        <button onclick="setCodexFilter('R')" id="codexTab_R" class="px-3 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition">R</button>
+      </div>
+
+      <div id="codexGrid" class="grid grid-cols-3 sm:grid-cols-5 gap-2.5 overflow-y-auto pr-1 flex-1"></div>
+
+      <button onclick="closeCodexModal()" class="mt-4 w-full bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition">
+        Close Codex
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= PROMOTE ALL SUMMARY MODAL ================= -->
+  <div id="promoteSummaryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-amber-500/40 max-w-md w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>⚡</span> Promotion Summary
+        </h3>
+        <button onclick="closePromoteSummaryModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div id="promoteSummaryList" class="overflow-y-auto space-y-2.5 my-4 pr-1 text-xs"></div>
+      <button onclick="closePromoteSummaryModal()" class="w-full bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition">
+        Awesome!
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MANUAL EMOJI DETAIL MODAL WITH PIN BUTTON ================= -->
+  <div id="emojiModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-3xl p-6 shadow-2xl text-center space-y-4 relative">
+      <button onclick="closeEmojiModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+      
+      <button id="emojiModalPinBtn" onclick="togglePinCurrentEmoji()" class="absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center gap-1">
+        <span>📌</span>
+        <span id="emojiModalPinText">Pin</span>
+      </button>
+
+      <div id="emojiModalEmoji" class="text-7xl pt-4">👑</div>
+      <div>
+        <h3 id="emojiModalName" class="text-xl font-black text-white">Crown</h3>
+        <span id="emojiModalTier" class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-400/30">UR</span>
+      </div>
+
+      <div id="emojiModalStars" class="text-base py-1"></div>
+
+      <div class="bg-slate-800/80 p-3 rounded-2xl border border-slate-700 space-y-2">
+        <div class="flex justify-between text-xs font-bold">
+          <span class="text-slate-400">Duplicate Shards</span>
+          <span id="emojiModalShardText" class="font-mono text-indigo-300">0 / 10</span>
+        </div>
+        <div class="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+          <div id="emojiModalShardBar" class="bg-gradient-to-r from-indigo-500 to-amber-400 h-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button id="emojiModalPromoteBtn" onclick="promoteCurrentEmoji()" class="w-full py-3 rounded-xl font-bold text-sm transition shadow-lg flex items-center justify-center gap-2">
+          Promote
+        </button>
+        <button id="emojiModalReplayBtn" onclick="replayCurrentEmojiCutscene()" class="w-full py-2 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition flex items-center justify-center gap-1.5">
+          <span>🎬</span> <span>Replay Entrance Animation</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RATES TABLE MODAL ================= -->
+  <div id="ratesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-lg w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>📊</span> Gacha Drop Rates
+        </h3>
+        <button onclick="closeRatesModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="overflow-y-auto space-y-4 my-4 pr-1 text-xs">
+        <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 space-y-1">
+          <div class="text-pink-400 font-bold">Summon Rules:</div>
+          <p class="text-slate-400 leading-relaxed">
+            • <strong>Guaranteed SR or higher</strong> on every 10-Pull!<br>
+            • Guaranteed <strong>SSR</strong> within <strong>40 pulls</strong>.<br>
+            • Guaranteed <strong>UR</strong> within <strong>100 pulls</strong>.<br>
+            • Selecting a <strong>🎯 Pick-up Target</strong> doubles that UR's own chance within the UR pool.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex justify-between font-bold text-amber-300 pb-1 border-b border-slate-800">
+            <span>Tier</span>
+            <span>Base Probability</span>
+          </div>
+          <div class="flex justify-between text-pink-400 font-bold">
+            <span>UR (Ultra Rare - Prismatic)</span>
+            <span>0.80%</span>
+          </div>
+          <div class="flex justify-between text-amber-400 font-bold">
+            <span>SSR (Super Special Rare - Gold)</span>
+            <span>3.20%</span>
+          </div>
+          <div class="flex justify-between text-purple-400 font-bold">
+            <span>SR (Special Rare - Purple)</span>
+            <span>32.00%</span>
+          </div>
+          <div class="flex justify-between text-slate-400 font-bold">
+            <span>R (Rare - Common)</span>
+            <span>64.00%</span>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="closeRatesModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs text-slate-300 transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= PULL LOG MODAL ================= -->
+  <div id="pullLogModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-lg w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>📜</span> Pull Log
+        </h3>
+        <button onclick="closePullLogModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="flex justify-end pt-3">
+        <button id="pullLogFilterBtn" onclick="togglePullLogFilter()" class="text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 bg-slate-800 border-slate-700 text-slate-400 hover:text-white">
+          🌟 Show UR Only
+        </button>
+      </div>
+
+      <div id="pullLogList" class="overflow-y-auto space-y-0.5 my-3 pr-1"></div>
+
+      <button onclick="closePullLogModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs text-slate-300 transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= ACHIEVEMENTS MODAL ================= -->
+  <div id="achievementsModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-lg w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>🏅</span> Achievements
+        </h3>
+        <button onclick="closeAchievementsModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div id="achievementsList" class="overflow-y-auto space-y-2 my-4 pr-1"></div>
+
+      <button onclick="closeAchievementsModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs text-slate-300 transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= OUT OF GEMS MODAL ================= -->
+  <div id="outOfGemsModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-rose-500/40 max-w-sm w-full rounded-3xl p-6 shadow-2xl text-center space-y-4">
+      <div class="text-5xl">💎💔</div>
+      <h3 class="text-lg font-black text-white">Not Enough Gems!</h3>
+      <p class="text-slate-400 text-xs leading-relaxed">
+        You don't have enough gems for this summon. Complete daily quests, mine crystals, or catch falling gems in Screensaver mode to earn more.
+      </p>
+      <div class="flex flex-col gap-2">
+        <button onclick="goToQuestsFromGemsModal()" class="w-full bg-gradient-to-r from-pink-500 via-amber-500 to-indigo-600 hover:opacity-90 active:scale-95 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-pink-500/20">
+          📜 Go to Quests
+        </button>
+        <button onclick="closeOutOfGemsModal()" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-sm transition">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS MODAL ================= -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>⚙️</span> Settings & Studio
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <!-- Custom Wallpaper -->
+      <div class="space-y-3 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-800/80">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-bold text-pink-300 flex items-center gap-1.5">
+            <span>🖼️</span> Custom Wallpaper
+          </label>
+          <button id="removeWpBtn" onclick="removeWallpaper()" class="text-[10px] text-rose-400 hover:underline hidden">
+            Remove
+          </button>
+        </div>
+        <input type="file" id="wallpaperFileInput" accept="image/*" onchange="handleWallpaperUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer w-full" />
+        
+        <div class="space-y-2 pt-1">
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>Dimness Overlay (Gameplay)</span>
+              <span id="wpOpacityVal">70%</span>
+            </div>
+            <input type="range" min="10" max="95" value="70" id="wpOpacitySlider" oninput="handleOpacityChange(event)" class="w-full accent-indigo-500 cursor-pointer" />
+          </div>
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400">
+                <span>Horizontal Pan (X)</span>
+                <span id="wpPosXVal">50%</span>
+              </div>
+              <input type="range" min="0" max="100" value="50" id="wpPosXSlider" oninput="handlePosChange(event)" class="w-full accent-indigo-500 cursor-pointer" />
+            </div>
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-400">
+                <span>Vertical Pan (Y)</span>
+                <span id="wpPosYVal">50%</span>
+              </div>
+              <input type="range" min="0" max="100" value="50" id="wpPosYSlider" oninput="handlePosChange(event)" class="w-full accent-indigo-500 cursor-pointer" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom BGM Audio Player (Fixed & Reliable) -->
+      <div class="space-y-3 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-800/80">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+            <span>🎵</span> Background Music (BGM)
+          </label>
+          <span id="bgmTrackTitle" class="text-[10px] text-slate-400 truncate max-w-[140px]">No track</span>
+        </div>
+        <input type="file" id="bgmFileInput" accept="audio/*" onchange="handleBgmUpload(event)" class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer w-full" />
+        
+        <div class="flex items-center gap-3 pt-1">
+          <button id="bgmPlayBtn" onclick="toggleBgmPlay()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold rounded-lg text-white transition active:scale-95">
+            ▶ Play
+          </button>
+          <div class="flex-1 flex items-center gap-2">
+            <span class="text-[10px] text-slate-400">Vol</span>
+            <input type="range" min="0" max="100" value="70" id="bgmVolumeSlider" oninput="handleBgmVolume(event)" class="w-full accent-amber-500 cursor-pointer" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Layout Switcher -->
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-slate-300 flex items-center gap-1">
+          <span>🖥️</span> Display Layout Mode:
+        </label>
+        <div class="grid grid-cols-3 gap-2 text-xs font-bold">
+          <button onclick="setLayout('mobile')" id="layoutBtn_mobile" class="py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex flex-col items-center gap-1">
+            <span>📱</span> <span>Mobile</span>
+          </button>
+          <button onclick="setLayout('tablet')" id="layoutBtn_tablet" class="py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex flex-col items-center gap-1">
+            <span>📟</span> <span>Tablet</span>
+          </button>
+          <button onclick="setLayout('desktop')" id="layoutBtn_desktop" class="py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex flex-col items-center gap-1">
+            <span>💻</span> <span>Desktop</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Toggles & SFX Settings -->
+      <div class="space-y-3 text-sm pt-2 border-t border-slate-800">
+        <!-- SFX Toggle -->
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-bold text-white text-xs sm:text-sm">Sound Effects (SFX)</div>
+            <div class="text-[10px] text-slate-400">Summon & gameplay sounds</div>
+          </div>
+          <button id="sfxToggleBtn" onclick="toggleSfx()" class="w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center">
+            <div id="sfxToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-6"></div>
+          </button>
+        </div>
+
+        <!-- SFX Volume Slider -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>SFX Volume</span>
+            <span id="sfxVolumeVal">100%</span>
+          </div>
+          <input type="range" min="0" max="100" value="100" id="sfxVolumeSlider" oninput="handleSfxVolume(event)" class="w-full accent-indigo-500 cursor-pointer" />
+        </div>
+
+        <!-- Sound Channels -->
+        <div class="bg-slate-950/40 p-3 rounded-2xl border border-slate-800/80 space-y-3 text-xs">
+          <div class="font-bold text-slate-300 text-[11px] mb-1">Sound Channels (mute + per-channel volume):</div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">🔸 Card Reveal Ticks</span>
+              <div class="flex items-center gap-2">
+                <button onclick="previewChannelSound('tick')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-700 text-slate-300">▶</button>
+                <input type="checkbox" id="sfxTicksCheck" onchange="toggleSoundChannel('ticks', this.checked)" checked class="accent-indigo-500 cursor-pointer" />
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="range" min="0" max="100" value="100" id="sfxChanSlider_tick" oninput="handleChannelVolume('tick', this.value)" class="w-full accent-indigo-500 cursor-pointer" />
+              <span id="sfxChanVal_tick" class="text-[10px] text-slate-500 w-9 text-right shrink-0">100%</span>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">🔸 Terminal Typing Sounds</span>
+              <div class="flex items-center gap-2">
+                <button onclick="previewChannelSound('typing')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-700 text-slate-300">▶</button>
+                <input type="checkbox" id="sfxTypingCheck" onchange="toggleSoundChannel('typing', this.checked)" checked class="accent-indigo-500 cursor-pointer" />
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="range" min="0" max="100" value="100" id="sfxChanSlider_typing" oninput="handleChannelVolume('typing', this.value)" class="w-full accent-indigo-500 cursor-pointer" />
+              <span id="sfxChanVal_typing" class="text-[10px] text-slate-500 w-9 text-right shrink-0">100%</span>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">🔸 Epic Anomaly Bass / Subwoofer</span>
+              <div class="flex items-center gap-2">
+                <button onclick="previewChannelSound('bass')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-700 text-slate-300">▶</button>
+                <input type="checkbox" id="sfxBassCheck" onchange="toggleSoundChannel('bass', this.checked)" checked class="accent-indigo-500 cursor-pointer" />
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="range" min="0" max="100" value="100" id="sfxChanSlider_bass" oninput="handleChannelVolume('bass', this.value)" class="w-full accent-indigo-500 cursor-pointer" />
+              <span id="sfxChanVal_bass" class="text-[10px] text-slate-500 w-9 text-right shrink-0">100%</span>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">🔸 Fanfare (SSR / UR / Promote Chimes)</span>
+              <button onclick="previewChannelSound('fanfare')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-700 text-slate-300">▶</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="range" min="0" max="100" value="100" id="sfxChanSlider_fanfare" oninput="handleChannelVolume('fanfare', this.value)" class="w-full accent-indigo-500 cursor-pointer" />
+              <span id="sfxChanVal_fanfare" class="text-[10px] text-slate-500 w-9 text-right shrink-0">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Header Share Button Toggle -->
+        <div class="flex justify-between items-center pt-1">
+          <div>
+            <div class="font-bold text-white text-xs sm:text-sm">Header Share Button</div>
+            <div class="text-[10px] text-slate-400">Display quick share button on top</div>
+          </div>
+          <button id="shareBtnToggleBtn" onclick="toggleShareBtnSetting()" class="w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center">
+            <div id="shareBtnToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-6"></div>
+          </button>
+        </div>
+
+        <!-- Fakeout Toggle -->
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-bold text-white text-xs sm:text-sm">⚡ Fakeout System</div>
+            <div class="text-[10px] text-slate-400">Allow disguised cards to shatter into UR</div>
+          </div>
+          <button id="fakeoutToggleBtn" onclick="toggleFakeoutSetting()" class="w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center">
+            <div id="fakeoutToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-6"></div>
+          </button>
+        </div>
+
+        <!-- Laptop Intro Animation -->
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-bold text-white text-xs sm:text-sm">💻 Laptop Intro Animation</div>
+            <div class="text-[10px] text-slate-400">Terminal zoom & vibration</div>
+          </div>
+          <button id="laptopIntroToggleBtn" onclick="toggleLaptopIntro()" class="w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center">
+            <div id="laptopIntroToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-6"></div>
+          </button>
+        </div>
+
+        <!-- Fast Summon Mode -->
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-bold text-white text-xs sm:text-sm">Fast Summon Mode</div>
+            <div class="text-[10px] text-slate-400">Skip non-UR single reveals</div>
+          </div>
+          <button id="fastToggleBtn" onclick="toggleFastMode()" class="w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center">
+            <div id="fastToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-0"></div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Compact Save Data Transfer -->
+      <div class="pt-3 border-t border-slate-800 space-y-3">
+        <div>
+          <h4 class="font-bold text-sm text-indigo-300 flex items-center gap-1.5">
+            <span>💾</span> Save Data Transfer (Compact)
+          </h4>
+          <p class="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+            Only gameplay data is exported (Wallpapers and Music are strictly local).
+          </p>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-semibold text-slate-300">Save Data String:</span>
+            <button onclick="copySaveData()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+              <span>📋</span> <span>Copy</span>
+            </button>
+          </div>
+          <textarea id="exportDataBox" readonly class="w-full h-14 bg-slate-950 border border-slate-800 rounded-xl p-2 font-mono text-[10px] text-slate-400 resize-none focus:outline-none select-all"></textarea>
+          <div id="copySuccessMsg" class="text-[11px] text-emerald-400 font-bold hidden">✓ Compact data copied!</div>
+        </div>
+
+        <div class="space-y-1.5 pt-1">
+          <span class="font-semibold text-xs text-slate-300">Import Save Data:</span>
+          <textarea id="importDataInput" placeholder="Paste data here..." class="w-full h-14 bg-slate-950 border border-slate-800 rounded-xl p-2 font-mono text-[10px] text-slate-200 resize-none focus:outline-none focus:border-indigo-500"></textarea>
+          <button onclick="restoreSaveData()" class="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-indigo-300 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+            <span>📥</span> <span>Restore Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Creator Credits -->
+      <div class="pt-3 border-t border-slate-800 space-y-2 bg-slate-950/40 p-3 rounded-2xl border border-slate-800/80">
+        <div class="text-xs font-bold text-amber-300 flex items-center gap-1">
+          <span>✨</span> Creator Info
+        </div>
+        <div class="text-xs text-slate-300 space-y-1 font-sans leading-relaxed">
+          <div>• <strong>Creator:</strong> <span class="text-indigo-400 font-mono">@NarueponKub</span> (X / Twitter)</div>
+          <div>• <strong>Email:</strong> <span class="text-indigo-300 font-mono">rattanagongaming@gmail.com</span></div>
+          <div>• <strong>Technology:</strong> Developed with <span class="text-amber-300 font-semibold">Gemini</span> & <span class="text-amber-300 font-semibold">Claude</span></div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="pt-2 border-t border-slate-800 space-y-2">
+        <div class="text-xs font-bold text-rose-400">Danger Zone:</div>
+        <button onclick="openResetModal(); closeSettingsModal();" class="w-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold py-2.5 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5">
+          <span>🔄</span>
+          <span>Reset All Progress</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= COMPREHENSIVE PATCH NOTES MODAL ================= -->
+  <div id="patchNotesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <div>
+          <h3 class="text-lg font-black text-white flex items-center gap-2">
+            <span>📜</span> Patch Notes Log
+          </h3>
+          <span class="text-[11px] text-indigo-400 font-mono">Current Version: v2.7.0</span>
+        </div>
+        <button onclick="closePatchNotesModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="overflow-y-auto space-y-4 my-4 pr-1 text-xs text-slate-300">
+        <!-- v2.7.0 -->
+        <div class="border-l-2 border-pink-500 pl-3 space-y-1.5">
+          <div class="font-black text-white text-sm">v2.7.0 - "Terminal Decryption & Pity Overhaul"</div>
+          <div class="text-[10px] text-slate-500 font-mono">Latest Major Release</div>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 leading-relaxed">
+            <li><strong>Gacha Rates & Pity:</strong> UR rate adjusted to 0.8% (100 Pity). Added SSR Pity (guaranteed at 35 pulls).</li>
+            <li><strong>Fakeout Overhaul:</strong> 3 taps required to shatter disguise. Native disguise frame retained. Settings toggle added.</li>
+            <li><strong>UR Decryption Terminal:</strong> Typing terminal effect ("The UR is...") before revealing UR entities.</li>
+            <li><strong>Fixed BGM Player:</strong> Complete rewrite of audio pipeline with reliable Play/Pause states.</li>
+            <li><strong>Live Digital Clock & Mascot Selector:</strong> Added live clock and ability to choose custom header mascots.</li>
+            <li><strong>Codex Silhouettes:</strong> Locked emojis now display grayscale silhouettes.</li>
+          </ul>
+        </div>
+
+        <!-- v2.6.0 -->
+        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
+          <div class="font-bold text-slate-200">v2.6.0 - "Pin System & Seamless Bloom"</div>
+          <p>Added favorite pinning, smooth gradual laptop zoom with radial bloom, and true fakeout secrecy.</p>
+        </div>
+
+        <!-- v2.5.0 -->
+        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
+          <div class="font-bold text-slate-200">v2.5.0 - "The Codex & Center Slam"</div>
+          <p>Introduced the comprehensive Emoji Codex and center-slam animation for SSR/UR.</p>
+        </div>
+
+        <!-- v2.4.0 -->
+        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
+          <div class="font-bold text-slate-200">v2.4.0 - "Prismatic Cosmos & Studio"</div>
+          <p>Added Wallpaper X/Y pan alignment, Zen Mode, and cutscene replay in collection.</p>
+        </div>
+
+        <!-- v2.0.0 -->
+        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
+          <div class="font-bold text-slate-200">v2.0.0 - "10-Star Color Ascension"</div>
+          <p>Introduced 10-Star tiering (Gold, Cyan, Purple, Crimson, Rainbow) with custom Soulstone upgrade costs.</p>
+        </div>
+      </div>
+
+      <button onclick="closePatchNotesModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs text-slate-300 transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MONTHLY CALENDAR MODAL ================= -->
+  <div id="calendarModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-indigo-500/40 max-w-2xl w-full rounded-3xl p-6 shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-800">
+        <div>
+          <h3 id="calendarMonthTitle" class="text-lg font-black text-white flex items-center gap-2">
+            <span>📅</span> Monthly Attendance
+          </h3>
+          <p class="text-xs text-slate-400">Claim all missed days since Day 1 anytime this month!</p>
+        </div>
+        <button id="claimAllPastBtn" onclick="claimAllAvailableDays()" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-1.5">
+          <span>🎁</span>
+          <span>Claim All Available</span>
+        </button>
+      </div>
+
+      <div id="calendarGrid" class="grid grid-cols-5 sm:grid-cols-7 gap-2 overflow-y-auto my-4 py-2 pr-1"></div>
+
+      <button onclick="closeCalendarModal()" class="mt-2 w-full bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition">
+        Close Calendar
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= RESET CONFIRMATION MODAL ================= -->
+  <div id="resetConfirmModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-rose-500/40 max-w-sm w-full rounded-3xl p-6 text-center shadow-2xl space-y-4">
+      <div class="text-4xl">⚠️</div>
+      <h3 class="text-lg font-black text-white">Reset All Progress?</h3>
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Wipe all emojis, promotions, Shards, calendar check-ins, and codes? Restart fresh with 25,000 Gems?
+      </p>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeResetModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition border border-slate-700">
+          Cancel
+        </button>
+        <button onclick="executeReset()" class="flex-1 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-lg shadow-rose-600/30">
+          Yes, Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= UNIFIED JAVASCRIPT ENGINE ================= -->
+  <script>
+    // --- OFFICIAL UNICODE NAMES & EXPANDED POOLS ---
+    const POOL = {
+      UR: [
+        { emoji: '💠', name: 'Diamond with a Dot' },
+        { emoji: '👑', name: 'Crown' },
+        { emoji: '🌌', name: 'Milky Way' },
+        { emoji: '🪐', name: 'Ringed Planet' },
+        { emoji: '🦄', name: 'Unicorn' },
+        { emoji: '🕊️', name: 'Dove' },
+        { emoji: '⏳', name: 'Hourglass Done' },
+        { emoji: '👁️‍🗨️', name: 'Eye in Speech Bubble' },
+        { emoji: '🛸', name: 'Flying Saucer' },
+        { emoji: '🪽', name: 'Wing' },
+        { emoji: '⛩️', name: 'Shinto Shrine' },
+        { emoji: '🌠', name: 'Shooting Star' },
+        { emoji: '🎆', name: 'Fireworks' },
+        { emoji: '🪬', name: 'Hamsa' },
+        { emoji: '⚜️', name: 'Fleur-de-lis' }
+      ],
+      SSR: [
+        { emoji: '🐉', name: 'Dragon' },
+        { emoji: '💎', name: 'Gem Stone' },
+        { emoji: '⚔️', name: 'Crossed Swords' },
+        { emoji: '🛡️', name: 'Shield' },
+        { emoji: '🏹', name: 'Bow and Arrow' },
+        { emoji: '⚡', name: 'High Voltage' },
+        { emoji: '❄️', name: 'Snowflake' },
+        { emoji: '🔥', name: 'Fire' },
+        { emoji: '🌙', name: 'Crescent Moon' },
+        { emoji: '☀️', name: 'Sun' },
+        { emoji: '🗝️', name: 'Old Key' },
+        { emoji: '🧿', name: 'Nazar Amulet' },
+        { emoji: '💀', name: 'Skull' },
+        { emoji: '🤖', name: 'Robot' },
+        { emoji: '🧬', name: 'DNA' },
+        { emoji: '🏰', name: 'Castle' },
+        { emoji: '🦁', name: 'Lion' },
+        { emoji: '🦅', name: 'Eagle' },
+        { emoji: '🦈', name: 'Shark' },
+        { emoji: '🏆', name: 'Trophy' },
+        { emoji: '🎯', name: 'Bullseye' },
+        { emoji: '🎪', name: 'Circus Tent' },
+        { emoji: '🏎️', name: 'Racing Car' },
+        { emoji: '🚀', name: 'Rocket' },
+        { emoji: '🎲', name: 'Game Die' },
+        { emoji: '🎸', name: 'Guitar' },
+        { emoji: '⚓', name: 'Anchor' },
+        { emoji: '🌋', name: 'Volcano' },
+        { emoji: '🏵️', name: 'Rosette' },
+        { emoji: '🪄', name: 'Magic Wand' }
+      ],
+      SR: [
+        { emoji: '🐺', name: 'Wolf' },
+        { emoji: '🐍', name: 'Snake' },
+        { emoji: '🦊', name: 'Fox' },
+        { emoji: '🐙', name: 'Octopus' },
+        { emoji: '🦂', name: 'Scorpion' },
+        { emoji: '🦉', name: 'Owl' },
+        { emoji: '🧪', name: 'Test Tube' },
+        { emoji: '📜', name: 'Scroll' },
+        { emoji: '💍', name: 'Ring' },
+        { emoji: '💣', name: 'Bomb' },
+        { emoji: '🦇', name: 'Bat' },
+        { emoji: '🦚', name: 'Peacock' },
+        { emoji: '🦋', name: 'Butterfly' },
+        { emoji: '🦔', name: 'Hedgehog' },
+        { emoji: '🐢', name: 'Turtle' },
+        { emoji: '🐬', name: 'Dolphin' },
+        { emoji: '🦖', name: 'T-Rex' },
+        { emoji: '🦧', name: 'Orangutan' },
+        { emoji: '🦩', name: 'Flamingo' },
+        { emoji: '🎋', name: 'Tanabata Tree' },
+        { emoji: '🗡️', name: 'Dagger' },
+        { emoji: '🪓', name: 'Axe' },
+        { emoji: '🪃', name: 'Boomerang' },
+        { emoji: '🎣', name: 'Fishing Pole' },
+        { emoji: '🪙', name: 'Coin' },
+        { emoji: '🪞', name: 'Mirror' },
+        { emoji: '🪔', name: 'Diya Lamp' },
+        { emoji: '🧲', name: 'Magnet' },
+        { emoji: '🪁', name: 'Kite' },
+        { emoji: '🏺', name: 'Amphora' },
+        { emoji: '🪕', name: 'Banjo' },
+        { emoji: '🎈', name: 'Balloon' },
+        { emoji: '🎭', name: 'Performing Arts' },
+        { emoji: '🕯️', name: 'Candle' },
+        { emoji: '🧭', name: 'Compass' }
+      ],
+      R: [
+        { emoji: '🍎', name: 'Red Apple' },
+        { emoji: '🍌', name: 'Banana' },
+        { emoji: '🍒', name: 'Cherries' },
+        { emoji: '🍇', name: 'Grapes' },
+        { emoji: '🍄', name: 'Mushroom' },
+        { emoji: '🥕', name: 'Carrot' },
+        { emoji: '🍪', name: 'Cookie' },
+        { emoji: '🍉', name: 'Watermelon' },
+        { emoji: '🍕', name: 'Pizza' },
+        { emoji: '🍩', name: 'Doughnut' },
+        { emoji: '☕', name: 'Hot Beverage' },
+        { emoji: '🥑', name: 'Avocado' },
+        { emoji: '🍔', name: 'Hamburger' },
+        { emoji: '🍙', name: 'Rice Ball' },
+        { emoji: '🍣', name: 'Sushi' },
+        { emoji: '🍓', name: 'Strawberry' },
+        { emoji: '🍍', name: 'Pineapple' },
+        { emoji: '🥭', name: 'Mango' },
+        { emoji: '🥥', name: 'Coconut' },
+        { emoji: '🌽', name: 'Ear of Corn' },
+        { emoji: '🥦', name: 'Broccoli' },
+        { emoji: '🥐', name: 'Croissant' },
+        { emoji: '🥞', name: 'Pancakes' },
+        { emoji: '🍟', name: 'French Fries' },
+        { emoji: '🌭', name: 'Hot Dog' },
+        { emoji: '🥪', name: 'Sandwich' },
+        { emoji: '🌮', name: 'Taco' },
+        { emoji: '🍦', name: 'Soft Ice Cream' },
+        { emoji: '🍰', name: 'Shortcake' },
+        { emoji: '🍫', name: 'Chocolate Bar' },
+        { emoji: '🍵', name: 'Teacup Without Handle' },
+        { emoji: '🥤', name: 'Cup with Straw' },
+        { emoji: '🥨', name: 'Pretzel' },
+        { emoji: '🍿', name: 'Popcorn' },
+        { emoji: '🍊', name: 'Tangerine' }
+      ]
+    };
+
+    // --- FACES BANNER POOL (2nd Banner Theme) ---
+    const FACES_POOL = {
+      UR: [
+        { emoji: '🤩', name: 'Star-Struck' },
+        { emoji: '🥳', name: 'Partying Face' },
+        { emoji: '🤯', name: 'Exploding Head' },
+        { emoji: '👽', name: 'Alien' },
+        { emoji: '🥸', name: 'Disguised Face' },
+        { emoji: '🫠', name: 'Melting Face' },
+        { emoji: '👻', name: 'Ghost' },
+        { emoji: '😈', name: 'Smiling Face with Horns' },
+        { emoji: '🫥', name: 'Dotted Line Face' },
+        { emoji: '😵‍💫', name: 'Face with Spiral Eyes' },
+        { emoji: '🤠', name: 'Cowboy Hat Face' },
+        { emoji: '👾', name: 'Alien Monster' }
+      ],
+      SSR: [
+        { emoji: '🥶', name: 'Cold Face' },
+        { emoji: '🥵', name: 'Hot Face' },
+        { emoji: '🤪', name: 'Zany Face' },
+        { emoji: '🤢', name: 'Nauseated Face' },
+        { emoji: '🤮', name: 'Face Vomiting' },
+        { emoji: '🥴', name: 'Woozy Face' },
+        { emoji: '🤧', name: 'Sneezing Face' },
+        { emoji: '🤒', name: 'Face with Thermometer' },
+        { emoji: '🤕', name: 'Face with Head-Bandage' },
+        { emoji: '🥺', name: 'Pleading Face' },
+        { emoji: '😱', name: 'Face Screaming in Fear' },
+        { emoji: '🥱', name: 'Yawning Face' },
+        { emoji: '😷', name: 'Face with Medical Mask' },
+        { emoji: '🤫', name: 'Shushing Face' },
+        { emoji: '🤭', name: 'Face with Hand Over Mouth' }
+      ],
+      SR: [
+        { emoji: '😎', name: 'Smiling Face with Sunglasses' },
+        { emoji: '🤓', name: 'Nerd Face' },
+        { emoji: '🧐', name: 'Face with Monocle' },
+        { emoji: '😏', name: 'Smirking Face' },
+        { emoji: '😌', name: 'Relieved Face' },
+        { emoji: '😔', name: 'Pensive Face' },
+        { emoji: '😴', name: 'Sleeping Face' },
+        { emoji: '🙄', name: 'Face with Rolling Eyes' },
+        { emoji: '😤', name: 'Face with Steam From Nose' },
+        { emoji: '😡', name: 'Pouting Face' },
+        { emoji: '😠', name: 'Angry Face' },
+        { emoji: '🤬', name: 'Face with Symbols on Mouth' },
+        { emoji: '😭', name: 'Loudly Crying Face' },
+        { emoji: '😢', name: 'Crying Face' },
+        { emoji: '😰', name: 'Anxious Face with Sweat' },
+        { emoji: '😨', name: 'Fearful Face' },
+        { emoji: '🥲', name: 'Smiling Face with Tear' },
+        { emoji: '🤗', name: 'Hugging Face' }
+      ],
+      R: [
+        { emoji: '😀', name: 'Grinning Face' },
+        { emoji: '😃', name: 'Grinning Face with Big Eyes' },
+        { emoji: '😄', name: 'Grinning Face with Smiling Eyes' },
+        { emoji: '😁', name: 'Beaming Face' },
+        { emoji: '😆', name: 'Grinning Squinting Face' },
+        { emoji: '😅', name: 'Grinning Face with Sweat' },
+        { emoji: '🤣', name: 'Rolling on the Floor Laughing' },
+        { emoji: '😂', name: 'Face with Tears of Joy' },
+        { emoji: '🙂', name: 'Slightly Smiling Face' },
+        { emoji: '🙃', name: 'Upside-Down Face' },
+        { emoji: '😉', name: 'Winking Face' },
+        { emoji: '😊', name: 'Smiling Face with Smiling Eyes' },
+        { emoji: '😇', name: 'Smiling Face with Halo' },
+        { emoji: '🥰', name: 'Smiling Face with Hearts' },
+        { emoji: '😍', name: 'Heart Eyes' },
+        { emoji: '😘', name: 'Face Blowing a Kiss' },
+        { emoji: '😗', name: 'Kissing Face' },
+        { emoji: '😙', name: 'Kissing Face with Smiling Eyes' },
+        { emoji: '😋', name: 'Face Savoring Food' },
+        { emoji: '😛', name: 'Face with Tongue' }
+      ]
+    };
+
+    const BANNER_POOLS = { cosmos: POOL, faces: FACES_POOL };
+
+    const BANNERS = [
+      {
+        id: 'cosmos',
+        icon: '💠',
+        tabLabel: 'Celestial Cosmos',
+        title: 'Celestial Cosmos',
+        tagline: '10-Pull guarantees SR or higher! Guaranteed SSR at 40, UR at 100 pulls.',
+        ringClass: 'border-pink-400/50 shadow-pink-500/20',
+        badgeClass: 'bg-pink-500/20 border-pink-400/40 text-pink-300'
+      },
+      {
+        id: 'faces',
+        icon: '🥳',
+        tabLabel: 'Feelings Parade',
+        title: 'Feelings Parade',
+        tagline: 'A rotating cast of expressions! Same guarantees, brand-new faces to collect.',
+        ringClass: 'border-amber-400/50 shadow-amber-500/20',
+        badgeClass: 'bg-amber-500/20 border-amber-400/40 text-amber-300'
+      }
+    ];
+
+    const STAR_REQUIREMENTS = {
+      1: 10, 2: 20, 3: 30, 4: 50, 5: 70,
+      6: 90, 7: 120, 8: 150, 9: 200, 10: 300
+    };
+
+    const DUPLICATE_SHARDS = { 'UR': 35, 'SSR': 20, 'SR': 10, 'R': 5 };
+
+    const PROMO_CODES = {
+      'INFLATION': 100000,
+      'LUCKY777': 77777,
+      'JAIMINI': 50000,
+      'WELCOME': 25000,
+      'EMOJIGACHA': 15000
+    };
+
+    // --- AUDIO SYSTEM ---
+    let audioCtx = null;
+    let sfxEnabled = true;
+    let sfxVolume = 1.0;
+    let fastModeEnabled = false;
+    let laptopIntroEnabled = true;
+
+    function getAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    ['click', 'touchstart', 'touchend'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        try { getAudioContext(); } catch(e){}
+      }, { passive: true });
+    });
+
+    function getChannelVol(type) {
+      const vols = (state && state.sfxChannelVol) || { tick: 100, typing: 100, bass: 100, fanfare: 100 };
+      let channel = 'fanfare';
+      if (type === 'tick') channel = 'tick';
+      else if (type === 'typing') channel = 'typing';
+      else if (type === 'ur_laptop') channel = 'bass';
+      return (vols[channel] ?? 100) / 100;
+    }
+
+    function playSound(type) {
+      if (!sfxEnabled) return;
+      if (type === 'tick' && state.sfxTicks === false) return;
+      if (type === 'typing' && state.sfxTyping === false) return;
+      if (type === 'ur_laptop' && state.sfxBass === false) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const masterVol = sfxVolume * getChannelVol(type);
+
+        if (type === 'tick' || type === 'typing') {
+          // Card reveal tick / terminal typing sound
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.setValueAtTime(440, now);
+          gain.gain.setValueAtTime(0.08 * masterVol, now);
+          gain.gain.linearRampToValueAtTime(0.0001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'pop') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.setValueAtTime(360, now);
+          gain.gain.setValueAtTime(0.15 * masterVol, now);
+          gain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'ssr') {
+          [523.25, 659.25, 783.99].forEach((f, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = f;
+            gain.gain.setValueAtTime(0.18 * masterVol, now + i * 0.08);
+            gain.gain.linearRampToValueAtTime(0.0001, now + 0.4 + i * 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.08);
+            osc.stop(now + 0.45 + i * 0.08);
+          });
+        } else if (type === 'ur_laptop') {
+          // Intense Deep Sci-fi Anomaly for Laptop Intro
+          const bass = ctx.createOscillator();
+          const bassGain = ctx.createGain();
+          bass.type = 'sawtooth';
+          bass.frequency.setValueAtTime(160, now);
+          bass.frequency.exponentialRampToValueAtTime(28, now + 1.3);
+          bassGain.gain.setValueAtTime(0.45 * masterVol, now);
+          bassGain.gain.linearRampToValueAtTime(0.0001, now + 1.3);
+          bass.connect(bassGain);
+          bassGain.connect(ctx.destination);
+          bass.start(now);
+          bass.stop(now + 1.35);
+
+          [329.63, 440, 554.37, 659.25, 880].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+            gain.gain.setValueAtTime(0.15 * masterVol, now + idx * 0.06);
+            gain.gain.linearRampToValueAtTime(0.0001, now + idx * 0.06 + 0.9);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.06);
+            osc.stop(now + idx * 0.06 + 0.95);
+          });
+        } else if (type === 'ur') {
+          const bass = ctx.createOscillator();
+          const bassGain = ctx.createGain();
+          bass.type = 'sawtooth';
+          bass.frequency.setValueAtTime(150, now);
+          bass.frequency.linearRampToValueAtTime(30, now + 1.4);
+          bassGain.gain.setValueAtTime(0.45 * masterVol, now);
+          bassGain.gain.linearRampToValueAtTime(0.0001, now + 1.4);
+          bass.connect(bassGain);
+          bassGain.connect(ctx.destination);
+          bass.start(now);
+          bass.stop(now + 1.45);
+
+          [523.25, 659.25, 783.99, 987.77, 1046.50, 1318.51, 1567.98].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+            gain.gain.linearRampToValueAtTime(0.24 * masterVol, now + idx * 0.08 + 0.04);
+            gain.gain.linearRampToValueAtTime(0.0001, now + idx * 0.08 + 1.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 1.35);
+          });
+        } else if (type === 'promote') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+            gain.gain.setValueAtTime(0.01, now + idx * 0.07);
+            gain.gain.linearRampToValueAtTime(0.18 * masterVol, now + idx * 0.07 + 0.03);
+            gain.gain.linearRampToValueAtTime(0.0001, now + idx * 0.07 + 0.5);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.55);
+          });
+        } else if (type === 'promote_rainbow') {
+          [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.01, now + idx * 0.08);
+            gain.gain.linearRampToValueAtTime(0.2 * masterVol, now + idx * 0.08 + 0.04);
+            gain.gain.linearRampToValueAtTime(0.0001, now + idx * 0.08 + 1.2);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 1.25);
+          });
+        } else if (type === 'suspense') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(55, now);
+          gain.gain.setValueAtTime(0.35 * masterVol, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.9);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.9);
+        } else if (type === 'glass_shatter') {
+          for (let i = 0; i < 4; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1200 + Math.random() * 2000, now + i * 0.04);
+            gain.gain.setValueAtTime(0.25 * masterVol, now + i * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.15);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.04);
+            osc.stop(now + i * 0.04 + 0.16);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // --- GAME STATE ---
+    function getDefaultState() {
+      const now = new Date();
+      return {
+        gems: 25000, // 25k starting gems
+        urPity: 0,
+        ssrPity: 0,
+        totalPulls: 0,
+        mineClicks: 0,
+        dailyClaimed: false,
+        dailyPullsCount: 0,
+        dailyPullClaimed: false,
+        dailyPromotesCount: 0,
+        dailyPromoteClaimed: false,
+        redeemedCodes: [],
+        inventory: {}, // emoji -> { name, tier, count, shards, stars, isRainbow, isPinned }
+        calendarMonthKey: `${now.getFullYear()}-${now.getMonth()}`,
+        claimedCalendarDays: [],
+        sfx: true,
+        sfxVol: 100,
+        sfxTicks: true,
+        sfxTyping: true,
+        sfxBass: true,
+        sfxChannelVol: { tick: 100, typing: 100, bass: 100, fanfare: 100 },
+        showShareBtn: true,
+        fakeoutEnabled: true,
+        fastMode: false,
+        laptopIntro: true,
+        layout: 'tablet',
+        mascot: '✨',
+        wpOpacity: 70,
+        wpPosX: 50,
+        wpPosY: 50,
+        currentBannerId: 'cosmos',
+        focusTargets: { cosmos: null, faces: null },
+        pullLog: [],
+        tenPullSummons: 0,
+        unlockedAchievements: [],
+        pullsSinceLastExport: 0
+      };
+    }
+
+    let state = getDefaultState();
+    let currentFilter = 'ALL';
+    let codexFilter = 'ALL';
+    let currentSessionPulls = [];
+    let currentRevealIndex = 0;
+    let selectedEmoji = null;
+    let pendingUrCutscenes = [];
+
+    // --- LOCAL STORAGE ---
+    function saveState() {
+      try {
+        localStorage.setItem('emoji_gacha_v270_save', JSON.stringify(state));
+      } catch (e) {
+        console.warn("Save storage quota exceeded", e);
+      }
+      checkAchievements();
+      checkExportReminder();
+      renderUI();
+    }
+
+    // --- TOAST NOTIFICATIONS ---
+    function showToast(html, durationMs = 4200) {
+      let host = document.getElementById('toastHost');
+      if (!host) {
+        host = document.createElement('div');
+        host.id = 'toastHost';
+        host.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex flex-col items-center gap-2 pointer-events-none w-full px-4';
+        document.body.appendChild(host);
+      }
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto max-w-sm w-full bg-slate-900/95 border border-indigo-500/40 shadow-xl shadow-black/40 rounded-2xl px-4 py-3 text-sm text-slate-100 backdrop-blur-md animate-[cardPop_0.3s_ease-out]';
+      toast.innerHTML = html;
+      host.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.4s ease';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+      }, durationMs);
+    }
+
+    // --- ACHIEVEMENTS ---
+    const ACHIEVEMENTS = [
+      { id: 'first_pull', icon: '🎉', name: 'First Steps', desc: 'Complete your first summon.', check: s => s.totalPulls >= 1 },
+      { id: 'first_ur', icon: '🌟', name: 'First UR!', desc: 'Obtain your first UR item.', check: s => Object.values(s.inventory).some(i => i.tier === 'UR') },
+      { id: 'collector_10', icon: '🎒', name: 'Collector I', desc: 'Own 10 unique emojis.', check: s => Object.keys(s.inventory).length >= 10 },
+      { id: 'collector_30', icon: '📦', name: 'Collector II', desc: 'Own 30 unique emojis.', check: s => Object.keys(s.inventory).length >= 30 },
+      { id: 'collector_60', icon: '🏛️', name: 'Collector III', desc: 'Own 60 unique emojis.', check: s => Object.keys(s.inventory).length >= 60 },
+      { id: 'ur_hoarder', icon: '👑', name: 'UR Hoarder', desc: 'Own 5 unique UR items.', check: s => Object.values(s.inventory).filter(i => i.tier === 'UR').length >= 5 },
+      { id: 'high_roller', icon: '🎰', name: 'High Roller', desc: 'Perform a 10x Summon, ten times.', check: s => (s.tenPullSummons || 0) >= 10 },
+      { id: 'dedicated', icon: '🔥', name: 'Dedicated Summoner', desc: 'Reach 500 total pulls.', check: s => s.totalPulls >= 500 }
+    ];
+
+    function checkAchievements() {
+      ACHIEVEMENTS.forEach(a => {
+        if (!state.unlockedAchievements.includes(a.id) && a.check(state)) {
+          state.unlockedAchievements.push(a.id);
+          try { localStorage.setItem('emoji_gacha_v270_save', JSON.stringify(state)); } catch (e) {}
+          showToast(`<div class="flex items-center gap-3"><span class="text-3xl">${a.icon}</span><div><div class="font-black text-amber-300 text-xs uppercase tracking-wide">Achievement Unlocked</div><div class="font-bold text-white text-sm">${a.name}</div></div></div>`);
+        }
+      });
+    }
+
+    function openAchievementsModal() {
+      renderAchievements();
+      document.getElementById('achievementsModal').classList.remove('hidden');
+    }
+    function closeAchievementsModal() { document.getElementById('achievementsModal').classList.add('hidden'); }
+
+    function renderAchievements() {
+      const list = document.getElementById('achievementsList');
+      if (!list) return;
+      list.innerHTML = ACHIEVEMENTS.map(a => {
+        const unlocked = state.unlockedAchievements.includes(a.id);
+        return `
+          <div class="flex items-center gap-3 p-3 rounded-xl border ${unlocked ? 'bg-amber-500/10 border-amber-500/40' : 'bg-slate-800/50 border-slate-700/60 opacity-60'}">
+            <span class="text-2xl">${unlocked ? a.icon : '🔒'}</span>
+            <div class="flex-1">
+              <div class="text-sm font-bold ${unlocked ? 'text-amber-300' : 'text-slate-400'}">${a.name}</div>
+              <div class="text-[11px] text-slate-400">${a.desc}</div>
+            </div>
+            ${unlocked ? '<span class="text-emerald-400 text-xs font-bold">✓</span>' : ''}
+          </div>`;
+      }).join('');
+    }
+
+    // --- EXPORT-SAVE REMINDER ---
+    function checkExportReminder() {
+      if (state.pullsSinceLastExport > 0 && state.pullsSinceLastExport % 200 === 0) {
+        showToast(`<div class="flex items-center gap-3"><span class="text-2xl">💾</span><div class="flex-1"><div class="font-bold text-white text-sm">อย่าลืมสำรองข้อมูล!</div><div class="text-[11px] text-slate-400 mb-1.5">คุณสุ่มไปเยอะแล้ว ก็อป Save Data เก็บไว้กันเหนียวนะ</div><button onclick="document.getElementById('toastHost').innerHTML='';openSettingsModal();" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg font-bold">ไปที่ Settings</button></div></div>`, 6000);
+      }
+    }
+
+    // --- BANNER SWITCHING & PICK-UP FOCUS ---
+    function switchBanner(id) {
+      if (!BANNER_POOLS[id]) return;
+      state.currentBannerId = id;
+      bannerEmojiIndex = 0;
+      renderBannerUI();
+      saveState();
+    }
+
+    function toggleFocusTarget(emoji) {
+      const bid = state.currentBannerId;
+      state.focusTargets[bid] = (state.focusTargets[bid] === emoji) ? null : emoji;
+      renderBannerUI();
+      saveState();
+    }
+
+    function renderBannerUI() {
+      const banner = BANNERS.find(b => b.id === state.currentBannerId) || BANNERS[0];
+      const titleEl = document.getElementById('bannerTitle');
+      const taglineEl = document.getElementById('bannerTagline');
+      if (titleEl) titleEl.innerText = banner.title;
+      if (taglineEl) taglineEl.innerText = banner.tagline;
+
+      document.querySelectorAll('.bannerTabBtn').forEach(btn => {
+        const isActive = btn.dataset.bannerId === state.currentBannerId;
+        btn.className = 'bannerTabBtn text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 ' +
+          (isActive ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white');
+      });
+
+      const focusRow = document.getElementById('focusTargetRow');
+      if (focusRow) {
+        const activePool = BANNER_POOLS[state.currentBannerId];
+        const focused = state.focusTargets[state.currentBannerId];
+        focusRow.innerHTML = activePool.UR.map(item => {
+          const isSel = focused === item.emoji;
+          return `<button onclick="toggleFocusTarget('${item.emoji}')" title="${item.name}" class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition active:scale-95 ${isSel ? 'bg-amber-500/25 border-amber-400 shadow shadow-amber-500/30' : 'bg-slate-800/70 border-slate-700 hover:border-slate-500'}">${item.emoji}</button>`;
+        }).join('');
+        const focusLabel = document.getElementById('focusTargetLabel');
+        if (focusLabel) {
+          focusLabel.innerText = focused
+            ? `🎯 Pick-up: ${activePool.UR.find(i => i.emoji === focused)?.name || ''} (2x rate)`
+            : '🎯 Pick-up Target — tap a UR to double its rate';
+        }
+      }
+    }
+
+    // --- OUT OF GEMS MODAL ---
+    function openOutOfGemsModal() { document.getElementById('outOfGemsModal').classList.remove('hidden'); }
+    function closeOutOfGemsModal() { document.getElementById('outOfGemsModal').classList.add('hidden'); }
+    function goToQuestsFromGemsModal() {
+      closeOutOfGemsModal();
+      const el = document.getElementById('questsSection');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // --- PULL LOG ---
+    let pullLogUrOnly = false;
+    function openPullLogModal() {
+      renderPullLog();
+      document.getElementById('pullLogModal').classList.remove('hidden');
+    }
+    function closePullLogModal() { document.getElementById('pullLogModal').classList.add('hidden'); }
+    function togglePullLogFilter() {
+      pullLogUrOnly = !pullLogUrOnly;
+      renderPullLog();
+    }
+    function renderPullLog() {
+      const list = document.getElementById('pullLogList');
+      const filterBtn = document.getElementById('pullLogFilterBtn');
+      if (filterBtn) {
+        filterBtn.className = 'text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 ' +
+          (pullLogUrOnly ? 'bg-pink-600 border-pink-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white');
+        filterBtn.innerText = pullLogUrOnly ? '🌟 Showing UR Only' : '🌟 Show UR Only';
+      }
+      if (!list) return;
+      let entries = state.pullLog || [];
+      if (pullLogUrOnly) entries = entries.filter(e => e.tier === 'UR');
+      if (entries.length === 0) {
+        list.innerHTML = `<div class="py-8 text-center text-xs text-slate-500 italic">${pullLogUrOnly ? 'No UR pulls yet — keep summoning!' : 'No pulls yet.'}</div>`;
+        return;
+      }
+      const tierClass = { UR: 'text-pink-300 bg-pink-500/15', SSR: 'text-amber-300 bg-amber-500/15', SR: 'text-purple-300 bg-purple-500/15', R: 'text-slate-400 bg-slate-700/40' };
+      list.innerHTML = entries.slice(0, 200).map(e => {
+        const d = new Date(e.ts);
+        const timeStr = `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ${d.toTimeString().slice(0, 8)}`;
+        const bannerName = (BANNERS.find(b => b.id === e.bannerId) || {}).tabLabel || '';
+        return `
+          <div class="flex items-center gap-3 py-2 px-2.5 rounded-xl ${e.tier === 'UR' ? 'bg-pink-500/5' : ''}">
+            <span class="text-xl w-8 text-center">${e.emoji}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold text-slate-200 truncate">${e.name}</div>
+              <div class="text-[10px] text-slate-500">${timeStr} · ${bannerName}</div>
+            </div>
+            <span class="text-[10px] font-black px-1.5 py-0.5 rounded ${tierClass[e.tier] || ''}">${e.tier}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // --- SOUND CHANNEL VOLUME ---
+    function handleChannelVolume(channel, val) {
+      state.sfxChannelVol[channel] = Number(val);
+      const label = document.getElementById(`sfxChanVal_${channel}`);
+      if (label) label.innerText = `${val}%`;
+      saveState();
+    }
+    function previewChannelSound(channel) {
+      getAudioContext();
+      const map = { tick: 'tick', typing: 'typing', bass: 'ur_laptop', fanfare: 'ssr' };
+      playSound(map[channel] || 'tick');
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('emoji_gacha_v270_save');
+      if (saved) {
+        try {
+          state = Object.assign(getDefaultState(), JSON.parse(saved));
+          const currentMonthKey = `${new Date().getFullYear()}-${new Date().getMonth()}`;
+          if (state.calendarMonthKey !== currentMonthKey) {
+            state.calendarMonthKey = currentMonthKey;
+            state.claimedCalendarDays = [];
+            state.dailyClaimed = false;
+            state.dailyPullsCount = 0;
+            state.dailyPullClaimed = false;
+            state.dailyPromotesCount = 0;
+            state.dailyPromoteClaimed = false;
+          }
+          sfxEnabled = state.sfx ?? true;
+          sfxVolume = (state.sfxVol ?? 100) / 100;
+          state.sfxTicks = state.sfxTicks ?? true;
+          state.sfxTyping = state.sfxTyping ?? true;
+          state.sfxBass = state.sfxBass ?? true;
+          state.sfxChannelVol = Object.assign({ tick: 100, typing: 100, bass: 100, fanfare: 100 }, state.sfxChannelVol || {});
+          state.showShareBtn = state.showShareBtn ?? true;
+          fastModeEnabled = state.fastMode ?? false;
+          laptopIntroEnabled = state.laptopIntro ?? true;
+          state.currentBannerId = BANNER_POOLS[state.currentBannerId] ? state.currentBannerId : 'cosmos';
+          state.focusTargets = Object.assign({ cosmos: null, faces: null }, state.focusTargets || {});
+          state.pullLog = Array.isArray(state.pullLog) ? state.pullLog : [];
+          state.tenPullSummons = state.tenPullSummons ?? 0;
+          state.unlockedAchievements = Array.isArray(state.unlockedAchievements) ? state.unlockedAchievements : [];
+          state.pullsSinceLastExport = state.pullsSinceLastExport ?? 0;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      applyLayout(state.layout || 'tablet');
+      loadSeparateMedia();
+      renderBannerUI();
+      renderUI();
+    }
+
+    // --- REALTIME DIGITAL CLOCK WITH DATE, UTC & TIMEZONE ---
+    function updateDigitalClock() {
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      const dateStr = now.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+
+      const offsetMinutes = -now.getTimezoneOffset();
+      const offsetSign = offsetMinutes >= 0 ? '+' : '-';
+      const absOffset = Math.abs(offsetMinutes);
+      const offsetHours = Math.floor(absOffset / 60);
+      const offsetMins = absOffset % 60;
+      const utcStr = `UTC${offsetSign}${offsetHours}${offsetMins ? `:${String(offsetMins).padStart(2, '0')}` : ''}`;
+
+      let zoneLabel = 'Local';
+      try {
+        const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const countryMap = {
+          'Asia/Bangkok': 'Thailand',
+          'Asia/Tokyo': 'Japan',
+          'Asia/Seoul': 'South Korea',
+          'Asia/Shanghai': 'China',
+          'Asia/Hong_Kong': 'Hong Kong',
+          'Asia/Singapore': 'Singapore',
+          'Asia/Taipei': 'Taiwan',
+          'Europe/London': 'United Kingdom',
+          'Europe/Paris': 'France',
+          'Europe/Berlin': 'Germany',
+          'America/New_York': 'USA',
+          'America/Los_Angeles': 'USA',
+          'America/Chicago': 'USA',
+          'Australia/Sydney': 'Australia'
+        };
+        zoneLabel = countryMap[zone] || zone.replace(/_/g, ' ') || 'Local';
+      } catch (e) {}
+
+      const clockEl = document.getElementById('digitalClock');
+      if (clockEl) {
+        clockEl.innerText = `${dateStr} · ${timeStr} · ${utcStr} · ${zoneLabel}`;
+      }
+    }
+    setInterval(updateDigitalClock, 1000);
+    updateDigitalClock();
+
+    // --- BANNER PREVIEW CYCLING ---
+    let bannerEmojiIndex = 0;
+    setInterval(() => {
+      const el = document.getElementById('bannerPreviewEmoji');
+      if (!el) return;
+      const urList = (BANNER_POOLS[state.currentBannerId] || POOL).UR;
+      bannerEmojiIndex = (bannerEmojiIndex + 1) % urList.length;
+      el.style.opacity = '0';
+      setTimeout(() => {
+        el.innerText = urList[bannerEmojiIndex].emoji;
+        el.style.opacity = '1';
+      }, 250);
+    }, 2500);
+
+    // --- SEPARATE MEDIA (WALLPAPER & BGM) ---
+    let localWallpaperData = null;
+
+    function loadSeparateMedia() {
+      localWallpaperData = localStorage.getItem('emoji_gacha_local_wp');
+      applyWallpaper();
+    }
+
+    function handleWallpaperUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1280;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          
+          localWallpaperData = canvas.toDataURL('image/jpeg', 0.85);
+          try {
+            localStorage.setItem('emoji_gacha_local_wp', localWallpaperData);
+          } catch (e) {
+            console.warn("Wallpaper exceeds localStorage quota");
+          }
+          applyWallpaper();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeWallpaper() {
+      localWallpaperData = null;
+      localStorage.removeItem('emoji_gacha_local_wp');
+      document.getElementById('wallpaperFileInput').value = '';
+      applyWallpaper();
+    }
+
+    function handleOpacityChange(e) {
+      state.wpOpacity = parseInt(e.target.value);
+      document.getElementById('wpOpacityVal').innerText = `${state.wpOpacity}%`;
+      saveState();
+      applyWallpaper();
+    }
+
+    function handlePosChange(e) {
+      state.wpPosX = parseInt(document.getElementById('wpPosXSlider').value);
+      state.wpPosY = parseInt(document.getElementById('wpPosYSlider').value);
+      document.getElementById('wpPosXVal').innerText = `${state.wpPosX}%`;
+      document.getElementById('wpPosYVal').innerText = `${state.wpPosY}%`;
+      saveState();
+      applyWallpaper();
+    }
+
+    function applyWallpaper() {
+      const layer = document.getElementById('wallpaperLayer');
+      const dim = document.getElementById('wallpaperDimOverlay');
+      const removeBtn = document.getElementById('removeWpBtn');
+
+      const op = state.wpOpacity ?? 70;
+      const posX = state.wpPosX ?? 50;
+      const posY = state.wpPosY ?? 50;
+
+      if (document.getElementById('wpOpacitySlider')) document.getElementById('wpOpacitySlider').value = op;
+      if (document.getElementById('wpOpacityVal')) document.getElementById('wpOpacityVal').innerText = `${op}%`;
+      if (document.getElementById('wpPosXSlider')) document.getElementById('wpPosXSlider').value = posX;
+      if (document.getElementById('wpPosXVal')) document.getElementById('wpPosXVal').innerText = `${posX}%`;
+      if (document.getElementById('wpPosYSlider')) document.getElementById('wpPosYSlider').value = posY;
+      if (document.getElementById('wpPosYVal')) document.getElementById('wpPosYVal').innerText = `${posY}%`;
+
+      if (localWallpaperData) {
+        layer.style.backgroundImage = `url(${localWallpaperData})`;
+        layer.style.backgroundPosition = `${posX}% ${posY}%`;
+        layer.style.opacity = '1';
+        dim.style.backgroundColor = `rgba(2, 6, 23, ${op / 100})`;
+        if (removeBtn) removeBtn.classList.remove('hidden');
+      } else {
+        layer.style.backgroundImage = 'none';
+        layer.style.opacity = '0';
+        dim.style.backgroundColor = 'transparent';
+        if (removeBtn) removeBtn.classList.add('hidden');
+      }
+    }
+
+    // --- RELIABLE BGM PLAYER ---
+    let currentBgmBlobUrl = null;
+
+    function handleBgmUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const audio = document.getElementById('bgmAudio');
+      if (currentBgmBlobUrl) URL.revokeObjectURL(currentBgmBlobUrl);
+      currentBgmBlobUrl = URL.createObjectURL(file);
+
+      audio.src = currentBgmBlobUrl;
+      document.getElementById('bgmTrackTitle').innerText = file.name;
+      audio.volume = 0.7;
+
+      audio.play().then(() => {
+        document.getElementById('bgmPlayBtn').innerText = '⏸ Pause';
+      }).catch(err => {
+        console.log("Audio waiting for user gesture", err);
+        document.getElementById('bgmPlayBtn').innerText = '▶ Play';
+      });
+    }
+
+    function toggleBgmPlay() {
+      const audio = document.getElementById('bgmAudio');
+      const btn = document.getElementById('bgmPlayBtn');
+      if (!audio.src) {
+        alert("Please choose a music file (.mp3, .wav) first!");
+        return;
+      }
+
+      if (audio.paused) {
+        audio.play().then(() => {
+          btn.innerText = '⏸ Pause';
+        }).catch(err => alert("Audio playback blocked. Tap anywhere first!"));
+      } else {
+        audio.pause();
+        btn.innerText = '▶ Play';
+      }
+    }
+
+    function handleBgmVolume(e) {
+      const audio = document.getElementById('bgmAudio');
+      audio.volume = parseInt(e.target.value) / 100;
+    }
+
+    function handleSfxVolume(e) {
+      const val = parseInt(e.target.value);
+      state.sfxVol = val;
+      sfxVolume = val / 100;
+      document.getElementById('sfxVolumeVal').innerText = `${val}%`;
+      saveState();
+    }
+
+    // --- ZEN MODE TOGGLE ---
+    function toggleHideUI(e) {
+      if (e) e.stopPropagation();
+      document.body.classList.add('ui-hidden');
+    }
+
+    function handleGlobalClick(e) {
+      if (document.body.classList.contains('ui-hidden')) {
+        document.body.classList.remove('ui-hidden');
+      }
+    }
+
+    // --- AFK SCREENSAVER (5 MINUTES = 300,000ms) ---
+    let afkTimer = null;
+    let isAfkActive = false;
+    let rainInterval = null;
+
+    function resetAfkTimer() {
+      if (isAfkActive) return;
+      clearTimeout(afkTimer);
+      afkTimer = setTimeout(triggerScreensaver, 300000); // 5 minutes
+    }
+
+    ['mousemove', 'keydown', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetAfkTimer, { passive: true });
+    });
+
+    function triggerScreensaver() {
+      isAfkActive = true;
+      document.getElementById('screensaverStage').classList.remove('hidden');
+      startEmojiRain();
+    }
+
+    function exitScreensaver() {
+      isAfkActive = false;
+      clearInterval(rainInterval);
+      document.getElementById('screensaverStage').classList.add('hidden');
+      document.getElementById('screensaverRainBox').innerHTML = '';
+      resetAfkTimer();
+    }
+
+    function startEmojiRain() {
+      const container = document.getElementById('screensaverRainBox');
+      container.innerHTML = '';
+
+      rainInterval = setInterval(() => {
+        if (!isAfkActive) return;
+        const drop = document.createElement('div');
+        const isShining = Math.random() < 0.18;
+        
+        const allPools = [...POOL.UR, ...POOL.SSR, ...POOL.SR, ...POOL.R];
+        const randomItem = allPools[Math.floor(Math.random() * allPools.length)];
+
+        drop.innerText = isShining ? (Math.random() < 0.5 ? '💠' : '💎') : randomItem.emoji;
+        const size = isShining ? 38 : Math.floor(Math.random() * 20) + 22;
+        drop.style.fontSize = `${size}px`;
+        drop.style.position = 'absolute';
+        drop.style.left = `${Math.random() * 90}%`;
+        drop.style.top = '-60px';
+        drop.style.transition = 'transform 8s linear, opacity 8s linear';
+        drop.style.cursor = isShining ? 'pointer' : 'default';
+
+        if (isShining) {
+          drop.className = 'shining-sparkle z-20 select-none';
+          drop.onclick = (e) => {
+            e.stopPropagation();
+            state.gems += 1000;
+            saveState();
+            playSound('ssr');
+            drop.style.transform = 'scale(2.2)';
+            drop.style.opacity = '0';
+            setTimeout(() => drop.remove(), 250);
+          };
+        } else {
+          drop.style.opacity = '0.35';
+        }
+
+        container.appendChild(drop);
+
+        setTimeout(() => {
+          drop.style.transform = `translateY(${window.innerHeight + 100}px)`;
+        }, 30);
+
+        setTimeout(() => {
+          if (drop.parentNode) drop.remove();
+        }, 8200);
+      }, 700);
+    }
+
+    // --- SLIDER DRAG TO UNLOCK ---
+    const sliderThumb = document.getElementById('sliderThumb');
+    let isDraggingThumb = false;
+    let thumbStartX = 0;
+
+    function onThumbStart(e) {
+      isDraggingThumb = true;
+      thumbStartX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+    }
+
+    function onThumbMove(e) {
+      if (!isDraggingThumb) return;
+      const currentX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+      const diff = Math.max(0, Math.min(240, currentX - thumbStartX));
+      sliderThumb.style.transform = `translateX(${diff}px)`;
+
+      if (diff >= 230) {
+        isDraggingThumb = false;
+        sliderThumb.style.transform = 'translateX(0px)';
+        exitScreensaver();
+      }
+    }
+
+    function onThumbEnd() {
+      if (!isDraggingThumb) return;
+      isDraggingThumb = false;
+      sliderThumb.style.transform = 'translateX(0px)';
+    }
+
+    sliderThumb.addEventListener('mousedown', onThumbStart);
+    sliderThumb.addEventListener('touchstart', onThumbStart, { passive: true });
+    window.addEventListener('mousemove', onThumbMove);
+    window.addEventListener('touchmove', onThumbMove, { passive: true });
+    window.addEventListener('mouseup', onThumbEnd);
+    window.addEventListener('touchend', onThumbEnd);
+
+    // --- LAYOUT SWITCHER ---
+    function setLayout(mode) {
+      state.layout = mode;
+      saveState();
+      applyLayout(mode);
+    }
+
+    function applyLayout(mode) {
+      const container = document.getElementById('mainContainer');
+      const bannerSec = document.getElementById('bannerSection');
+      const asideSec = document.getElementById('asideSection');
+      const grid = document.getElementById('inventoryGrid');
+
+      ['mobile', 'tablet', 'desktop'].forEach(m => {
+        const btn = document.getElementById(`layoutBtn_${m}`);
+        if (btn) {
+          if (m === mode) btn.className = 'py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex flex-col items-center gap-1';
+          else btn.className = 'py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex flex-col items-center gap-1';
+        }
+      });
+
+      if (mode === 'mobile') {
+        container.className = 'max-w-md mx-auto px-4 mt-6 grid grid-cols-1 gap-6 transition-all duration-300 relative z-10';
+        bannerSec.className = 'space-y-6';
+        asideSec.className = 'space-y-6';
+        grid.className = 'grid grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1';
+      } else if (mode === 'desktop') {
+        container.className = 'max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-300 relative z-10';
+        bannerSec.className = 'lg:col-span-2 space-y-6';
+        asideSec.className = 'space-y-6';
+        grid.className = 'grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-96 overflow-y-auto pr-1';
+      } else {
+        container.className = 'max-w-4xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-300 relative z-10';
+        bannerSec.className = 'md:col-span-2 space-y-6';
+        asideSec.className = 'space-y-6';
+        grid.className = 'grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-96 overflow-y-auto pr-1';
+      }
+    }
+
+    // --- MASCOT SELECTOR MODAL ---
+    function openMascotModal() {
+      const grid = document.getElementById('mascotGrid');
+      grid.innerHTML = '';
+      const items = Object.keys(state.inventory);
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-4 text-xs text-slate-500 italic text-center">Pull emojis first to set them as mascot!</div>';
+      } else {
+        items.forEach(emoji => {
+          const btn = document.createElement('button');
+          btn.className = 'p-2 text-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl border border-slate-700 transition flex items-center justify-center';
+          btn.innerText = emoji;
+          btn.onclick = () => {
+            state.mascot = emoji;
+            saveState();
+            closeMascotModal();
+          };
+          grid.appendChild(btn);
+        });
+      }
+
+      document.getElementById('mascotModal').classList.remove('hidden');
+    }
+
+    function closeMascotModal() {
+      document.getElementById('mascotModal').classList.add('hidden');
+    }
+
+    // --- STAR FORMATTING HELPER ---
+    function getStarsHtml(stars, isRainbow) {
+      if (isRainbow) return '<span class="rainbow-text font-black text-xs sm:text-sm">🌈★ (Rainbow Ascended)</span>';
+      if (stars <= 5) return `<span class="text-amber-400 font-black">${'★'.repeat(stars)}</span>`;
+      if (stars <= 7) return `<span class="text-cyan-400 font-black drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]">${'★'.repeat(stars)}</span>`;
+      if (stars <= 9) return `<span class="text-fuchsia-400 font-black drop-shadow-[0_0_6px_rgba(232,121,249,0.8)]">${'★'.repeat(stars)}</span>`;
+      if (stars === 10) return `<span class="text-rose-500 font-black drop-shadow-[0_0_8px_rgba(244,63,94,0.9)]">${'★'.repeat(10)}</span>`;
+      return `<span class="text-amber-400 font-black">★</span>`;
+    }
+
+    // --- REBALANCED PULL LOGIC (UR 0.8%, SSR 3.2%, SR 32%, R 64%) ---
+    function getSinglePull(is10thGuaranteed = false) {
+      state.urPity++;
+      state.ssrPity++;
+      state.totalPulls++;
+      state.dailyPullsCount++;
+
+      let tier = 'R';
+
+      // 1. UR Pity at 100 or 0.8% base
+      if (state.urPity >= 100 || Math.random() < 0.008) {
+        tier = 'UR';
+        state.urPity = 0;
+        state.ssrPity = 0; // UR resets SSR pity too
+      } 
+      // 2. SSR Pity at 40 or 3.2% base
+      else if (state.ssrPity >= 40 || Math.random() < 0.032) {
+        tier = 'SSR';
+        state.ssrPity = 0;
+      } 
+      // 3. SR Guarantee on 10th or 32% base
+      else if (is10thGuaranteed || Math.random() < 0.32) {
+        tier = 'SR';
+      } else {
+        tier = 'R';
+      }
+
+      const activePool = BANNER_POOLS[state.currentBannerId] || POOL;
+      const poolList = activePool[tier];
+      const focusEmoji = state.focusTargets ? state.focusTargets[state.currentBannerId] : null;
+      const chosen = pickFromPool(poolList, tier === 'UR' ? focusEmoji : null);
+      let isNew = false;
+      let addedShards = 0;
+
+      if (!state.inventory[chosen.emoji]) {
+        state.inventory[chosen.emoji] = {
+          name: chosen.name,
+          tier: tier,
+          count: 1,
+          shards: 0,
+          stars: 1,
+          isRainbow: false,
+          isPinned: false
+        };
+        isNew = true;
+      } else {
+        const item = state.inventory[chosen.emoji];
+        item.count++;
+        addedShards = DUPLICATE_SHARDS[tier] || 5;
+        item.shards += addedShards;
+      }
+
+      const currentItem = state.inventory[chosen.emoji];
+
+      // FAKEOUT (ENABLED VIA SETTINGS): 35% chance for UR to disguise as R or SR
+      let isFakeout = false;
+      let fakeoutDisguise = null;
+      if (state.fakeoutEnabled && tier === 'UR' && Math.random() < 0.35) {
+        isFakeout = true;
+        const disguisePool = Math.random() < 0.6 ? activePool.SR : activePool.R;
+        fakeoutDisguise = disguisePool[Math.floor(Math.random() * disguisePool.length)];
+      }
+
+      const pullResult = {
+        emoji: chosen.emoji,
+        name: chosen.name,
+        tier: tier,
+        isNew: isNew,
+        addedShards: addedShards,
+        stars: currentItem.stars,
+        isRainbow: currentItem.isRainbow,
+        isFakeout: isFakeout,
+        fakeoutClicks: 0,
+        disguiseEmoji: fakeoutDisguise ? fakeoutDisguise.emoji : null,
+        disguiseName: fakeoutDisguise ? fakeoutDisguise.name : null,
+        disguiseTier: fakeoutDisguise ? (activePool.SR.includes(fakeoutDisguise) ? 'SR' : 'R') : null
+      };
+
+      logPull(pullResult);
+      return pullResult;
+    }
+
+    // --- WEIGHTED PICK (2x rate for the chosen Pick-up focus target) ---
+    function pickFromPool(poolList, focusEmoji) {
+      if (!focusEmoji) return poolList[Math.floor(Math.random() * poolList.length)];
+      const idx = poolList.findIndex(p => p.emoji === focusEmoji);
+      if (idx === -1) return poolList[Math.floor(Math.random() * poolList.length)];
+      const totalWeight = poolList.length + 1; // focus item counted twice
+      let r = Math.random() * totalWeight;
+      for (let i = 0; i < poolList.length; i++) {
+        const w = (i === idx) ? 2 : 1;
+        if (r < w) return poolList[i];
+        r -= w;
+      }
+      return poolList[idx];
+    }
+
+    // --- PULL LOG ---
+    function logPull(pull) {
+      state.pullLog.unshift({
+        emoji: pull.emoji,
+        name: pull.name,
+        tier: pull.tier,
+        bannerId: state.currentBannerId,
+        ts: Date.now()
+      });
+      if (state.pullLog.length > 300) state.pullLog.length = 300;
+      state.pullsSinceLastExport++;
+    }
+
+    // --- TRIGGER SUMMON FLOW ---
+    function startSummon(times) {
+      const cost = times * 100;
+      if (state.gems < cost) {
+        openOutOfGemsModal();
+        return;
+      }
+
+      getAudioContext();
+      state.gems -= cost;
+      if (times === 10) state.tenPullSummons = (state.tenPullSummons || 0) + 1;
+
+      currentSessionPulls = [];
+      for (let i = 0; i < times; i++) {
+        const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR'));
+        currentSessionPulls.push(getSinglePull(isGuaranteed));
+      }
+
+      saveState();
+
+      // Disguise check: If UR is a fakeout, don't spoil it on the laptop!
+      const hasApparentUr = currentSessionPulls.some(p => p.tier === 'UR' && !p.isFakeout);
+      const hasApparentSsr = currentSessionPulls.some(p => p.tier === 'SSR');
+      const hasApparentSr = currentSessionPulls.some(p => p.tier === 'SR' || (p.tier === 'UR' && p.isFakeout && p.disguiseTier === 'SR'));
+
+      if (laptopIntroEnabled) {
+        playLaptopIntro(hasApparentUr, hasApparentSsr, hasApparentSr);
+      } else {
+        proceedToReveal();
+      }
+    }
+
+    function playLaptopIntro(hasUr, hasSsr, hasSr) {
+      const stage = document.getElementById('laptopStage');
+      const container = document.getElementById('laptopContainer');
+      const bloom = document.getElementById('laptopRadialBloom');
+      const msg = document.getElementById('laptopStatusMsg');
+
+      stage.classList.remove('hidden');
+      bloom.style.opacity = '0';
+      container.className = 'relative flex items-center justify-center laptop-smooth-zoom';
+
+      if (hasUr) {
+        msg.innerText = '⚠️ COSMIC MATRIX WARPING... ⚠️';
+        msg.className = 'mt-12 font-mono tracking-widest text-xs uppercase text-pink-300 font-black animate-pulse relative z-20';
+        bloom.style.background = 'radial-gradient(circle, rgba(244, 114, 182, 0.95) 0%, rgba(168, 85, 247, 0.75) 30%, rgba(56, 189, 248, 0.4) 55%, transparent 72%)';
+        playSound('ur_laptop'); // Layered orchestral sound
+      } else if (hasSsr) {
+        msg.innerText = '⚡ GOLDEN ANOMALY ENGAGED...';
+        msg.className = 'mt-12 font-mono tracking-widest text-xs uppercase text-amber-300 font-bold relative z-20';
+        bloom.style.background = 'radial-gradient(circle, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.65) 35%, rgba(217, 119, 6, 0.3) 60%, transparent 75%)';
+        playSound('ssr');
+      } else if (hasSr) {
+        msg.innerText = 'EPIC SIGNAL ACQUIRED.';
+        msg.className = 'mt-12 font-mono tracking-widest text-xs uppercase text-purple-300 relative z-20';
+        bloom.style.background = 'radial-gradient(circle, rgba(168, 85, 247, 0.9) 0%, rgba(147, 51, 234, 0.6) 35%, transparent 70%)';
+        playSound('pop');
+      } else {
+        msg.innerText = 'RECEIVING PACKETS...';
+        msg.className = 'mt-12 font-mono tracking-widest text-xs uppercase text-sky-400 relative z-20';
+        bloom.style.background = 'radial-gradient(circle, rgba(56, 189, 248, 0.8) 0%, rgba(14, 165, 233, 0.5) 35%, transparent 70%)';
+        playSound('tick');
+      }
+
+      setTimeout(() => {
+        bloom.style.opacity = '1';
+      }, 550);
+
+      setTimeout(() => {
+        stage.classList.add('hidden');
+        container.className = 'relative flex items-center justify-center';
+        proceedToReveal();
+      }, 1650);
+    }
+
+    function proceedToReveal() {
+      if (fastModeEnabled) {
+        const urItems = currentSessionPulls.filter(p => p.tier === 'UR');
+        if (urItems.length > 0) {
+          pendingUrCutscenes = [...urItems];
+          triggerNextUrCutsceneWithTyping();
+        } else {
+          showSummaryModal();
+        }
+        return;
+      }
+
+      currentRevealIndex = 0;
+      document.getElementById('revealStage').classList.remove('hidden');
+      displayCurrentCard();
+    }
+
+    // --- CARD BY CARD DISPLAY WITH VISIBLE FLOAT & SLAM + 3-TAP FAKEOUT ---
+    function displayCurrentCard() {
+      if (currentRevealIndex >= currentSessionPulls.length) {
+        document.getElementById('revealStage').classList.add('hidden');
+        showSummaryModal();
+        return;
+      }
+
+      const item = currentSessionPulls[currentRevealIndex];
+      const card = document.getElementById('revealCard');
+      const starsEl = document.getElementById('revealCardStars');
+      const emojiEl = document.getElementById('revealCardEmoji');
+      const nameEl = document.getElementById('revealCardName');
+      const badgeEl = document.getElementById('revealCardTierBadge');
+      const noticeEl = document.getElementById('revealUpgradeNotice');
+      const hintText = document.getElementById('revealCardHintText');
+      const progressText = document.getElementById('revealProgressText');
+
+      progressText.innerText = `PULL ${currentRevealIndex + 1} / ${currentSessionPulls.length}`;
+
+      card.classList.remove('card-pop-in', 'card-float-slam', 'fakeout-card');
+      void card.offsetWidth;
+
+      // 1. Check if card is currently a Fakeout in disguise!
+      if (item.isFakeout) {
+        // Keep disguise's natural frame without pink outline!
+        if (item.disguiseTier === 'SR') {
+          card.className = 'card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-sr';
+          starsEl.innerHTML = '<span class="text-purple-300 font-bold">★ ★</span>';
+          badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/40';
+        } else {
+          card.className = 'card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-r';
+          starsEl.innerHTML = '<span class="text-slate-400 font-bold">★</span>';
+          badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+        }
+
+        emojiEl.innerText = item.disguiseEmoji;
+        nameEl.innerText = item.disguiseName;
+        badgeEl.innerText = item.disguiseTier;
+        noticeEl.classList.add('hidden');
+
+        if (item.fakeoutClicks === 0) {
+          hintText.innerText = '[ TAP SCREEN TO NEXT ]';
+          hintText.className = 'mt-8 text-xs tracking-widest text-slate-400 animate-pulse pointer-events-none font-mono';
+        } else if (item.fakeoutClicks === 1) {
+          card.classList.add('fakeout-card');
+          hintText.innerText = '⚡ UNSTABLE SIGNAL DETECTED! (1/3) ⚡';
+          hintText.className = 'mt-8 text-xs tracking-widest text-pink-400 font-black animate-pulse font-mono';
+        } else if (item.fakeoutClicks === 2) {
+          card.classList.add('fakeout-card');
+          hintText.innerText = '💥 FRACTURE DETECTED! TAP TO SHATTER! (2/3) 💥';
+          hintText.className = 'mt-8 text-xs tracking-widest text-amber-300 font-black animate-bounce font-mono';
+        }
+
+        playSound(item.disguiseTier === 'SR' ? 'pop' : 'tick');
+        return;
+      }
+
+      // 2. Normal Card Reveal Flow
+      hintText.innerText = '[ TAP SCREEN TO NEXT ]';
+      hintText.className = 'mt-8 text-xs tracking-widest text-slate-400 animate-pulse pointer-events-none font-mono';
+
+      emojiEl.innerText = item.emoji;
+      nameEl.innerText = item.name;
+      starsEl.innerHTML = getStarsHtml(item.stars, item.isRainbow);
+
+      noticeEl.classList.add('hidden');
+      if (item.isNew) {
+        noticeEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        noticeEl.innerText = 'NEW!';
+        noticeEl.classList.remove('hidden');
+      } else {
+        noticeEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        noticeEl.innerText = `+${item.addedShards} Shards`;
+        noticeEl.classList.remove('hidden');
+      }
+
+      if (item.tier === 'UR') {
+        card.className = 'card-float-slam relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-ur';
+        badgeEl.innerText = 'UR COSMIC';
+        badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full bg-pink-500/30 text-pink-300 border border-pink-400/60';
+        triggerUrWithTyping(item);
+      } else if (item.tier === 'SSR') {
+        card.className = 'card-float-slam relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-ssr';
+        badgeEl.innerText = 'SSR GOLD';
+        badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-amber-500/30 text-amber-300 border border-amber-400/50';
+        playSound('ssr');
+      } else if (item.tier === 'SR') {
+        card.className = 'card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-sr';
+        badgeEl.innerText = 'SR PURPLE';
+        badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/40';
+        playSound('pop');
+      } else {
+        card.className = 'card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-r';
+        badgeEl.innerText = 'R COMMON';
+        badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+        playSound('tick'); // Distinct click for Common
+      }
+    }
+
+    function onRevealScreenTapped(e) {
+      if (e.target.closest('button')) return;
+
+      const item = currentSessionPulls[currentRevealIndex];
+      if (item && item.isFakeout) {
+        item.fakeoutClicks++;
+        if (item.fakeoutClicks < 3) {
+          playSound('pop');
+          displayCurrentCard();
+          return;
+        } else {
+          // 3rd Tap: Shatter into true UR!
+          item.isFakeout = false;
+          playSound('glass_shatter');
+          document.getElementById('appBody').classList.add('shake-screen');
+          setTimeout(() => document.getElementById('appBody').classList.remove('shake-screen'), 450);
+          displayCurrentCard();
+          return;
+        }
+      }
+
+      currentRevealIndex++;
+      displayCurrentCard();
+    }
+
+    function skipAllReveals() {
+      const remainingPulls = currentSessionPulls.slice(currentRevealIndex);
+      const remainingUrs = remainingPulls.filter(p => p.tier === 'UR');
+
+      document.getElementById('revealStage').classList.add('hidden');
+
+      if (remainingUrs.length > 0) {
+        pendingUrCutscenes = [...remainingUrs];
+        triggerNextUrCutsceneWithTyping();
+      } else {
+        showSummaryModal();
+      }
+    }
+
+    // --- UR TERMINAL TYPING CUTSCENE ---
+    function triggerUrWithTyping(item) {
+      const terminalStage = document.getElementById('urTerminalStage');
+      const typingEl = document.getElementById('urTypingText');
+      const previewEl = document.getElementById('urImpactEmojiPreview');
+
+      terminalStage.classList.remove('hidden');
+      typingEl.innerText = '';
+      previewEl.innerText = '';
+      previewEl.style.opacity = '0';
+      previewEl.style.transform = 'scale(0.5)';
+
+      playSound('suspense');
+
+      const textToType = "The UR is . . . ";
+      let charIdx = 0;
+
+      const typingTimer = setInterval(() => {
+        if (charIdx < textToType.length) {
+          typingEl.innerText += textToType[charIdx];
+          playSound('typing');
+          charIdx++;
+        } else {
+          clearInterval(typingTimer);
+          // Pause then reveal emoji preview
+          setTimeout(() => {
+            previewEl.innerText = item.emoji;
+            previewEl.style.opacity = '1';
+            previewEl.style.transform = 'scale(1.2)';
+            playSound('ssr');
+
+            setTimeout(() => {
+              terminalStage.classList.add('hidden');
+              showUrCutsceneDirect(item);
+            }, 750);
+          }, 450);
+        }
+      }, 70);
+    }
+
+    function triggerNextUrCutsceneWithTyping() {
+      if (pendingUrCutscenes.length === 0) {
+        showSummaryModal();
+        return;
+      }
+      const item = pendingUrCutscenes.shift();
+      triggerUrWithTyping(item);
+    }
+
+    function showUrCutsceneDirect(item) {
+      const cutscene = document.getElementById('cutsceneStage');
+      const body = document.getElementById('appBody');
+
+      document.getElementById('cutsceneEmoji').innerText = item.emoji;
+      document.getElementById('cutsceneItemName').innerText = item.name;
+
+      cutscene.classList.remove('hidden');
+      body.classList.add('shake-screen');
+      setTimeout(() => body.classList.remove('shake-screen'), 450);
+
+      playSound('ur');
+    }
+
+    function dismissCutscene() {
+      document.getElementById('cutsceneStage').classList.add('hidden');
+      if (pendingUrCutscenes.length > 0) {
+        triggerNextUrCutsceneWithTyping();
+      }
+    }
+
+    // --- SUMMARY MODAL ---
+    function showSummaryModal() {
+      const modal = document.getElementById('resultModal');
+      const grid = document.getElementById('modalItemsGrid');
+      grid.innerHTML = '';
+
+      currentSessionPulls.forEach(item => {
+        const itemEl = document.createElement('div');
+        let cardStyle = 'bg-slate-800 border border-slate-700 text-slate-300';
+        let tierLabel = item.tier;
+
+        if (item.tier === 'UR') {
+          cardStyle = 'glow-ur text-pink-200 font-bold';
+        } else if (item.tier === 'SSR') {
+          cardStyle = 'glow-ssr text-amber-200 font-semibold';
+        } else if (item.tier === 'SR') {
+          cardStyle = 'glow-sr text-purple-200';
+        }
+
+        itemEl.className = `p-2 rounded-2xl flex flex-col items-center justify-center aspect-square text-center ${cardStyle}`;
+        itemEl.innerHTML = `
+          <div class="text-3xl mb-0.5">${item.emoji}</div>
+          <div class="text-[9px] font-black tracking-tighter truncate w-full">${item.name}</div>
+          <div class="text-[8px] opacity-90 mt-0.5">${item.isNew ? '<span class="text-emerald-400 font-bold">NEW</span>' : `<span class="text-amber-300">+${item.addedShards} Shards</span>`}</div>
+        `;
+        grid.appendChild(itemEl);
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('resultModal').classList.add('hidden');
+    }
+
+    // --- CODEX / ENCYCLOPEDIA SYSTEM (SILHOUETTE MODE) ---
+    function openCodexModal() {
+      renderCodex();
+      document.getElementById('codexModal').classList.remove('hidden');
+    }
+
+    function closeCodexModal() {
+      document.getElementById('codexModal').classList.add('hidden');
+    }
+
+    function setCodexFilter(filter) {
+      codexFilter = filter;
+      ['ALL', 'UR', 'SSR', 'SR', 'R'].forEach(tab => {
+        const btn = document.getElementById(`codexTab_${tab}`);
+        if (tab === filter) {
+          btn.className = 'px-3 py-1 rounded-lg bg-indigo-600 text-white transition';
+        } else {
+          btn.className = 'px-3 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition';
+        }
+      });
+      renderCodex();
+    }
+
+    function renderCodex() {
+      const grid = document.getElementById('codexGrid');
+      grid.innerHTML = '';
+
+      let allEntries = [];
+      Object.keys(POOL).forEach(tier => {
+        POOL[tier].forEach(item => {
+          allEntries.push({ ...item, tier });
+        });
+      });
+
+      const totalCount = allEntries.length;
+      const discoveredCount = allEntries.filter(e => state.inventory[e.emoji]).length;
+      const percentage = Math.round((discoveredCount / totalCount) * 100);
+      document.getElementById('codexProgressText').innerText = `Discovered: ${discoveredCount} / ${totalCount} (${percentage}%)`;
+
+      let filtered = allEntries;
+      if (codexFilter !== 'ALL') {
+        filtered = allEntries.filter(e => e.tier === codexFilter);
+      }
+
+      filtered.forEach(entry => {
+        const isDiscovered = !!state.inventory[entry.emoji];
+        const itemData = state.inventory[entry.emoji];
+        const card = document.createElement('div');
+
+        if (isDiscovered) {
+          let borderStyle = 'border-slate-700 bg-slate-800/80';
+          if (entry.tier === 'UR') borderStyle = 'glow-ur border-pink-400/60';
+          else if (entry.tier === 'SSR') borderStyle = 'glow-ssr border-amber-400/60';
+          else if (entry.tier === 'SR') borderStyle = 'glow-sr border-purple-400/50';
+
+          card.className = `p-2.5 rounded-2xl border flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition ${borderStyle}`;
+          card.onclick = () => { closeCodexModal(); openEmojiModal(entry.emoji); };
+          card.innerHTML = `
+            <div class="text-3xl mb-1">${entry.emoji}</div>
+            <div class="text-[10px] font-bold text-white truncate w-full">${entry.name}</div>
+            <div class="mt-1">${getStarsHtml(itemData.stars, itemData.isRainbow)}</div>
+          `;
+        } else {
+          // GRAYSCALE SILHOUETTE FOR LOCKED ENTITIES!
+          card.className = 'p-2.5 rounded-2xl border border-slate-800 bg-slate-950/60 flex flex-col items-center justify-center text-center opacity-40';
+          card.innerHTML = `
+            <div class="text-3xl mb-1 filter grayscale brightness-50 opacity-40 select-none">${entry.emoji}</div>
+            <div class="text-[10px] font-mono text-slate-500 truncate w-full">???</div>
+            <span class="text-[8px] font-mono text-slate-600 mt-1 uppercase">${entry.tier}</span>
+          `;
+        }
+
+        grid.appendChild(card);
+      });
+    }
+
+    // --- MANUAL EMOJI DETAIL & REPLAY CUTSCENE & PIN ---
+    function openEmojiModal(emoji) {
+      const item = state.inventory[emoji];
+      if (!item) return;
+      selectedEmoji = emoji;
+
+      document.getElementById('emojiModalEmoji').innerText = emoji;
+      document.getElementById('emojiModalName').innerText = item.name;
+      
+      const tierBadge = document.getElementById('emojiModalTier');
+      tierBadge.innerText = item.tier;
+      if (item.tier === 'UR') tierBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-pink-500/30 text-pink-300 border border-pink-400/50';
+      else if (item.tier === 'SSR') tierBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-400/50';
+      else if (item.tier === 'SR') tierBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-300 border border-purple-400/50';
+      else tierBadge.className = 'text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+
+      const replayBtn = document.getElementById('emojiModalReplayBtn');
+      if (item.tier === 'UR' || item.tier === 'SSR') {
+        replayBtn.classList.remove('hidden');
+      } else {
+        replayBtn.classList.add('hidden');
+      }
+
+      updateEmojiModalContent();
+      document.getElementById('emojiModal').classList.remove('hidden');
+    }
+
+    function togglePinCurrentEmoji() {
+      const item = state.inventory[selectedEmoji];
+      if (!item) return;
+
+      item.isPinned = !item.isPinned;
+      saveState();
+      updateEmojiModalContent();
+      playSound('pop');
+    }
+
+    function replayCurrentEmojiCutscene() {
+      const item = state.inventory[selectedEmoji];
+      if (!item) return;
+      closeEmojiModal();
+
+      if (item.tier === 'UR') {
+        triggerUrWithTyping({ emoji: selectedEmoji, name: item.name });
+      } else if (item.tier === 'SSR') {
+        document.getElementById('revealStage').classList.remove('hidden');
+        currentSessionPulls = [{ emoji: selectedEmoji, name: item.name, tier: 'SSR', stars: item.stars, isRainbow: item.isRainbow, isNew: false, addedShards: 0 }];
+        currentRevealIndex = 0;
+        displayCurrentCard();
+      }
+    }
+
+    function updateEmojiModalContent() {
+      const item = state.inventory[selectedEmoji];
+      if (!item) return;
+
+      document.getElementById('emojiModalStars').innerHTML = getStarsHtml(item.stars, item.isRainbow);
+      
+      const pinText = document.getElementById('emojiModalPinText');
+      const pinBtn = document.getElementById('emojiModalPinBtn');
+      if (item.isPinned) {
+        pinText.innerText = 'Pinned';
+        pinBtn.className = 'absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/50 transition flex items-center gap-1 shadow-sm';
+      } else {
+        pinText.innerText = 'Pin';
+        pinBtn.className = 'absolute top-4 left-4 text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 transition flex items-center gap-1';
+      }
+
+      const shardText = document.getElementById('emojiModalShardText');
+      const shardBar = document.getElementById('emojiModalShardBar');
+      const btn = document.getElementById('emojiModalPromoteBtn');
+
+      if (item.isRainbow) {
+        shardText.innerText = `${item.shards} Shards`;
+        shardBar.style.width = '100%';
+        btn.disabled = true;
+        btn.className = 'w-full py-3 rounded-xl font-black text-sm bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700';
+        btn.innerHTML = '<span>🌈 Maximum Ascension Reached</span>';
+        return;
+      }
+
+      const needed = STAR_REQUIREMENTS[item.stars] || 10;
+      shardText.innerText = `${item.shards} / ${needed}`;
+      const percentage = Math.min(100, Math.round((item.shards / needed) * 100));
+      shardBar.style.width = `${percentage}%`;
+
+      if (item.shards >= needed) {
+        btn.disabled = false;
+        if (item.stars === 10) {
+          btn.className = 'w-full py-3 rounded-xl font-black text-sm bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500 hover:opacity-90 active:scale-95 text-white transition shadow-lg cursor-pointer animate-pulse';
+          btn.innerHTML = `<span>🌈 Ascend to Rainbow Star (Cost: ${needed})</span>`;
+        } else {
+          const nextStar = item.stars + 1;
+          btn.className = 'w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 active:scale-95 text-white transition shadow-lg cursor-pointer';
+          btn.innerHTML = `<span>⭐ Promote to ${nextStar}★ (Cost: ${needed})</span>`;
+        }
+      } else {
+        btn.disabled = true;
+        btn.className = 'w-full py-3 rounded-xl font-bold text-sm bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700';
+        btn.innerHTML = `<span>Need ${needed - item.shards} more Shards</span>`;
+      }
+    }
+
+    function promoteCurrentEmoji() {
+      const item = state.inventory[selectedEmoji];
+      if (!item || item.isRainbow) return;
+
+      const needed = STAR_REQUIREMENTS[item.stars] || 10;
+      if (item.shards >= needed) {
+        item.shards -= needed;
+        state.dailyPromotesCount++;
+        if (item.stars === 10) {
+          item.isRainbow = true;
+          playSound('promote_rainbow');
+        } else {
+          item.stars++;
+          playSound('promote');
+        }
+        saveState();
+        updateEmojiModalContent();
+      }
+    }
+
+    function closeEmojiModal() {
+      document.getElementById('emojiModal').classList.add('hidden');
+    }
+
+    // --- PROMOTE ALL WITH MODAL BREAKDOWN ---
+    function checkAvailablePromotions() {
+      let normalUpgradesAvailable = 0;
+      let rainbowAscensionsAvailable = 0;
+
+      Object.values(state.inventory).forEach(item => {
+        if (!item.isRainbow) {
+          if (item.stars < 10) {
+            const needed = STAR_REQUIREMENTS[item.stars] || 10;
+            if (item.shards >= needed) normalUpgradesAvailable++;
+          } else if (item.stars === 10) {
+            const needed = STAR_REQUIREMENTS[10] || 300;
+            if (item.shards >= needed) rainbowAscensionsAvailable++;
+          }
+        }
+      });
+
+      return { normal: normalUpgradesAvailable, rainbow: rainbowAscensionsAvailable };
+    }
+
+    function updatePromoteAllBtnUI() {
+      const { normal, rainbow } = checkAvailablePromotions();
+      const btn = document.getElementById('promoteAllBtn');
+      const text = document.getElementById('promoteAllBtnText');
+
+      if (normal > 0) {
+        btn.className = 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 active:scale-95 shadow-md shadow-amber-500/20 transition cursor-pointer';
+        text.innerText = 'Promote All (to 10★)';
+      } else if (rainbow > 0) {
+        btn.className = 'bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500 hover:opacity-90 text-white font-black px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 active:scale-95 shadow-md shadow-rose-500/30 transition cursor-pointer animate-pulse';
+        text.innerText = '🌈 Ascend All (Rainbow)';
+      } else {
+        btn.className = 'bg-slate-800 text-slate-500 font-bold px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 cursor-default border border-slate-700';
+        text.innerText = 'Promote All';
+      }
+    }
+
+    function promoteAllEmojis() {
+      const { normal, rainbow } = checkAvailablePromotions();
+      const summaryList = [];
+
+      if (normal > 0) {
+        Object.keys(state.inventory).forEach(emoji => {
+          const item = state.inventory[emoji];
+          const initialStars = item.stars;
+
+          while (!item.isRainbow && item.stars < 10) {
+            const needed = STAR_REQUIREMENTS[item.stars] || 10;
+            if (item.shards >= needed) {
+              item.shards -= needed;
+              item.stars++;
+              state.dailyPromotesCount++;
+            } else {
+              break;
+            }
+          }
+
+          if (item.stars > initialStars) {
+            summaryList.push({
+              emoji: emoji,
+              name: item.name,
+              from: `${initialStars}★`,
+              to: `${item.stars}★`,
+              isRainbow: false
+            });
+          }
+        });
+
+        playSound('promote');
+        saveState();
+        updatePromoteAllBtnUI();
+        showPromoteSummaryModal(summaryList, false);
+        return;
+      }
+
+      if (rainbow > 0) {
+        Object.keys(state.inventory).forEach(emoji => {
+          const item = state.inventory[emoji];
+          if (!item.isRainbow && item.stars === 10) {
+            const needed = STAR_REQUIREMENTS[10] || 300;
+            if (item.shards >= needed) {
+              item.shards -= needed;
+              item.isRainbow = true;
+              state.dailyPromotesCount++;
+              summaryList.push({
+                emoji: emoji,
+                name: item.name,
+                from: '10★',
+                to: '🌈 Rainbow Star',
+                isRainbow: true
+              });
+            }
+          }
+        });
+
+        playSound('promote_rainbow');
+        saveState();
+        updatePromoteAllBtnUI();
+        showPromoteSummaryModal(summaryList, true);
+        return;
+      }
+
+      alert("No emojis currently have enough Shards to promote.");
+    }
+
+    function showPromoteSummaryModal(summaryList, isRainbowStage) {
+      const modal = document.getElementById('promoteSummaryModal');
+      const container = document.getElementById('promoteSummaryList');
+      container.innerHTML = '';
+
+      summaryList.forEach(info => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2.5 bg-slate-800/80 border border-slate-700 rounded-xl';
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">${info.emoji}</span>
+            <span class="font-bold text-white text-xs">${info.name}</span>
+          </div>
+          <div class="text-right font-mono text-[11px]">
+            <span class="text-slate-400">${info.from}</span>
+            <span class="text-slate-500 mx-1">➔</span>
+            <span class="${info.isRainbow ? 'rainbow-text font-black' : 'text-amber-400 font-bold'}">${info.to}</span>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function closePromoteSummaryModal() {
+      document.getElementById('promoteSummaryModal').classList.add('hidden');
+    }
+
+    // --- COMPACT SAVE DATA TRANSFER ---
+    function openRatesModal() { document.getElementById('ratesModal').classList.remove('hidden'); }
+    function closeRatesModal() { document.getElementById('ratesModal').classList.add('hidden'); }
+
+    function openSettingsModal() { 
+      updateSettingsUI();
+      const exportPayload = {
+        v: 27,
+        g: state.gems,
+        p: state.urPity,
+        sp: state.ssrPity,
+        tp: state.totalPulls,
+        m: state.mineClicks,
+        d: state.dailyClaimed,
+        dpc: state.dailyPullsCount,
+        dpr: state.dailyPromotesCount,
+        rc: state.redeemedCodes,
+        cd: state.claimedCalendarDays,
+        inv: state.inventory,
+        mascot: state.mascot
+      };
+      document.getElementById('exportDataBox').value = JSON.stringify(exportPayload);
+      document.getElementById('copySuccessMsg').classList.add('hidden');
+      document.getElementById('settingsModal').classList.remove('hidden'); 
+    }
+    function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+    function openPatchNotesModal() { document.getElementById('patchNotesModal').classList.remove('hidden'); }
+    function closePatchNotesModal() { document.getElementById('patchNotesModal').classList.add('hidden'); }
+
+    function toggleSoundChannel(channel, checked) {
+      if (channel === 'ticks') state.sfxTicks = checked;
+      if (channel === 'typing') state.sfxTyping = checked;
+      if (channel === 'bass') state.sfxBass = checked;
+      saveState();
+      updateSettingsUI();
+    }
+
+    function toggleShareBtnSetting() {
+      state.showShareBtn = !state.showShareBtn;
+      saveState();
+      updateSettingsUI();
+    }
+
+    function triggerShare() {
+      const allEntries = Object.keys(state.inventory);
+      let highestStars = 1;
+      let hasRainbow = false;
+
+      allEntries.forEach(k => {
+        const item = state.inventory[k];
+        if (item.isRainbow) hasRainbow = true;
+        if (item.stars > highestStars) highestStars = item.stars;
+      });
+
+      const shareText = `✨ I unlocked ${allEntries.length} emojis in Emoji Gacha Simulator! Highest: ${hasRainbow ? '🌈 Rainbow Star' : `${highestStars}★`} · Current Gems: ${state.gems.toLocaleString()} 💎`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'Emoji Gacha Simulator',
+          text: shareText,
+          url: window.location.href
+        }).catch(() => {});
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(`${shareText}\n${window.location.href}`)
+          .then(() => alert(`📋 Copied share message to clipboard!\n\n${shareText}`))
+          .catch(() => alert(shareText));
+      } else {
+        alert(shareText);
+      }
+    }
+
+    function toggleSfx() {
+      sfxEnabled = !sfxEnabled;
+      state.sfx = sfxEnabled;
+      saveState();
+      updateSettingsUI();
+    }
+
+    function toggleFastMode() {
+      fastModeEnabled = !fastModeEnabled;
+      state.fastMode = fastModeEnabled;
+      saveState();
+      updateSettingsUI();
+    }
+
+    function toggleLaptopIntro() {
+      laptopIntroEnabled = !laptopIntroEnabled;
+      state.laptopIntro = laptopIntroEnabled;
+      saveState();
+      updateSettingsUI();
+    }
+
+    function toggleFakeoutSetting() {
+      state.fakeoutEnabled = !state.fakeoutEnabled;
+      saveState();
+      updateSettingsUI();
+    }
+
+    function updateSettingsUI() {
+      const sfxBtn = document.getElementById('sfxToggleBtn');
+      const sfxDot = document.getElementById('sfxToggleDot');
+      if (sfxEnabled) {
+        sfxBtn.className = 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center';
+        sfxDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-6';
+      } else {
+        sfxBtn.className = 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+        sfxDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+      }
+
+      const fakeoutBtn = document.getElementById('fakeoutToggleBtn');
+      const fakeoutDot = document.getElementById('fakeoutToggleDot');
+      if (state.fakeoutEnabled) {
+        fakeoutBtn.className = 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center';
+        fakeoutDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-6';
+      } else {
+        fakeoutBtn.className = 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+        fakeoutDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+      }
+
+      const fastBtn = document.getElementById('fastToggleBtn');
+      const fastDot = document.getElementById('fastToggleDot');
+      if (fastModeEnabled) {
+        fastBtn.className = 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center';
+        fastDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-6';
+      } else {
+        fastBtn.className = 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+        fastDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+      }
+
+      const introBtn = document.getElementById('laptopIntroToggleBtn');
+      const introDot = document.getElementById('laptopIntroToggleDot');
+      if (laptopIntroEnabled) {
+        introBtn.className = 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center';
+        introDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-6';
+      } else {
+        introBtn.className = 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+        introDot.className = 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+      }
+
+      const sfxSlider = document.getElementById('sfxVolumeSlider');
+      const sfxVal = document.getElementById('sfxVolumeVal');
+      if (sfxSlider && sfxVal) {
+        sfxSlider.value = state.sfxVol ?? 100;
+        sfxVal.innerText = `${state.sfxVol ?? 100}%`;
+      }
+
+      const ticksCheck = document.getElementById('sfxTicksCheck');
+      const typingCheck = document.getElementById('sfxTypingCheck');
+      const bassCheck = document.getElementById('sfxBassCheck');
+      if (ticksCheck) ticksCheck.checked = state.sfxTicks ?? true;
+      if (typingCheck) typingCheck.checked = state.sfxTyping ?? true;
+      if (bassCheck) bassCheck.checked = state.sfxBass ?? true;
+
+      ['tick', 'typing', 'bass', 'fanfare'].forEach(ch => {
+        const slider = document.getElementById(`sfxChanSlider_${ch}`);
+        const label = document.getElementById(`sfxChanVal_${ch}`);
+        const val = (state.sfxChannelVol && state.sfxChannelVol[ch]) ?? 100;
+        if (slider) slider.value = val;
+        if (label) label.innerText = `${val}%`;
+      });
+
+      const shareBtn = document.getElementById('headerShareBtn');
+      if (shareBtn) shareBtn.classList.toggle('hidden', state.showShareBtn === false);
+
+      const shareToggle = document.getElementById('shareBtnToggleBtn');
+      const shareDot = document.getElementById('shareBtnToggleDot');
+      if (shareToggle && shareDot) {
+        const on = state.showShareBtn !== false;
+        shareToggle.className = on
+          ? 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center'
+          : 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+        shareDot.className = on
+          ? 'w-4 h-4 bg-white rounded-full transition transform translate-x-6'
+          : 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+      }
+    }
+
+    function copySaveData() {
+      const exportBox = document.getElementById('exportDataBox');
+      exportBox.select();
+      exportBox.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(exportBox.value).then(() => {
+        document.getElementById('copySuccessMsg').classList.remove('hidden');
+        state.pullsSinceLastExport = 0;
+        saveState();
+      }).catch(() => {
+        document.execCommand('copy');
+        document.getElementById('copySuccessMsg').classList.remove('hidden');
+        state.pullsSinceLastExport = 0;
+        saveState();
+      });
+    }
+
+    function restoreSaveData() {
+      const input = document.getElementById('importDataInput').value.trim();
+      if (!input) {
+        alert("Please paste your backup data string first!");
+        return;
+      }
+
+      try {
+        const p = JSON.parse(input);
+        state.gems = p.g ?? state.gems;
+        state.urPity = p.p ?? state.urPity;
+        state.ssrPity = p.sp ?? state.ssrPity;
+        state.totalPulls = p.tp ?? state.totalPulls;
+        state.mineClicks = p.m ?? state.mineClicks;
+        state.dailyClaimed = p.d ?? state.dailyClaimed;
+        state.dailyPullsCount = p.dpc ?? state.dailyPullsCount;
+        state.dailyPromotesCount = p.dpr ?? state.dailyPromotesCount;
+        state.redeemedCodes = p.rc ?? state.redeemedCodes;
+        state.claimedCalendarDays = p.cd ?? state.claimedCalendarDays;
+        state.inventory = p.inv ?? state.inventory;
+        state.mascot = p.mascot ?? state.mascot;
+        state.sfxTicks = p.sfxTicks ?? state.sfxTicks;
+        state.sfxTyping = p.sfxTyping ?? state.sfxTyping;
+        state.sfxBass = p.sfxBass ?? state.sfxBass;
+        state.showShareBtn = p.showShareBtn ?? state.showShareBtn;
+
+        saveState();
+        document.getElementById('importDataInput').value = '';
+        closeSettingsModal();
+        playSound('ur');
+        alert("🎉 Save data restored successfully!");
+      } catch (err) {
+        alert("Failed to parse save data! Please ensure the entire text was pasted correctly.");
+      }
+    }
+
+    // --- RESET FUNCTION ---
+    function openResetModal() { document.getElementById('resetConfirmModal').classList.remove('hidden'); }
+    function closeResetModal() { document.getElementById('resetConfirmModal').classList.add('hidden'); }
+    function executeReset() {
+      localStorage.removeItem('emoji_gacha_v270_save');
+      state = getDefaultState();
+      saveState();
+      closeResetModal();
+      document.getElementById('couponInput').value = '';
+      document.getElementById('couponMsg').innerText = '';
+    }
+
+    // --- MONTHLY CALENDAR CHECK-IN ---
+    function getDaysInCurrentMonth() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    }
+
+    function getDayReward(day) {
+      if (day === 30 || day === 31) return 20000;
+      if (day === 15) return 15000;
+      if (day % 7 === 0) return 8000;
+      return 3000;
+    }
+
+    function openCalendarModal() {
+      renderCalendar();
+      document.getElementById('calendarModal').classList.remove('hidden');
+    }
+    function closeCalendarModal() { document.getElementById('calendarModal').classList.add('hidden'); }
+
+    function renderCalendar() {
+      const now = new Date();
+      const currentDay = now.getDate();
+      const totalDays = getDaysInCurrentMonth();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      
+      document.getElementById('calendarMonthTitle').innerHTML = `<span>📅</span> ${monthNames[now.getMonth()]} Attendance`;
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      let unclaimedPastCount = 0;
+      let unclaimedPastGems = 0;
+
+      for (let day = 1; day <= totalDays; day++) {
+        const reward = getDayReward(day);
+        const isClaimed = state.claimedCalendarDays.includes(day);
+        const isPastOrToday = day <= currentDay;
+        const isToday = day === currentDay;
+
+        if (isPastOrToday && !isClaimed) {
+          unclaimedPastCount++;
+          unclaimedPastGems += reward;
+        }
+
+        const dayCard = document.createElement('div');
+        let cardStyle = 'bg-slate-800/40 border-slate-800 text-slate-600 opacity-60';
+
+        if (isClaimed) {
+          cardStyle = 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400';
+        } else if (isPastOrToday) {
+          if (isToday) {
+            cardStyle = 'bg-indigo-900/40 border-amber-400/80 text-amber-300 shadow-md shadow-amber-500/20 animate-pulse';
+          } else {
+            cardStyle = 'bg-slate-800 border-indigo-400/40 text-slate-200 hover:border-indigo-400 cursor-pointer';
+          }
+        }
+
+        dayCard.className = `p-2.5 rounded-2xl border flex flex-col items-center justify-between text-center min-h-[78px] transition ${cardStyle}`;
+        
+        let statusHtml = '';
+        if (isClaimed) {
+          statusHtml = '<span class="text-[9px] font-bold text-emerald-400">✓ Done</span>';
+        } else if (isPastOrToday) {
+          statusHtml = `<button onclick="claimSingleDay(${day})" class="mt-1 text-[9px] font-bold px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg active:scale-95 transition">Claim</button>`;
+        } else {
+          statusHtml = '<span class="text-[9px] text-slate-500">🔒</span>';
+        }
+
+        dayCard.innerHTML = `
+          <div class="text-[10px] font-bold ${isToday ? 'text-amber-400 font-extrabold' : 'text-slate-400'}">Day ${day}</div>
+          <div class="text-[11px] font-mono font-bold text-amber-300">+${reward.toLocaleString()}💎</div>
+          ${statusHtml}
+        `;
+
+        grid.appendChild(dayCard);
+      }
+
+      const claimAllBtn = document.getElementById('claimAllPastBtn');
+      if (unclaimedPastCount > 0) {
+        claimAllBtn.className = 'w-full sm:w-auto bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer';
+        claimAllBtn.innerHTML = `<span>🎁</span> <span>Claim All (${unclaimedPastCount} Days · +${unclaimedPastGems.toLocaleString()} 💎)</span>`;
+      } else {
+        claimAllBtn.className = 'w-full sm:w-auto bg-slate-800 text-slate-500 font-bold px-4 py-2 rounded-xl text-xs transition cursor-not-allowed flex items-center justify-center gap-1.5';
+        claimAllBtn.innerHTML = `<span>✓</span> <span>All Up to Date!</span>`;
+      }
+    }
+
+    function claimSingleDay(day) {
+      if (state.claimedCalendarDays.includes(day)) return;
+      const reward = getDayReward(day);
+      state.gems += reward;
+      state.claimedCalendarDays.push(day);
+      playSound('pop');
+      saveState();
+      renderCalendar();
+    }
+
+    function claimAllAvailableDays() {
+      const currentDay = new Date().getDate();
+      let totalClaimedGems = 0;
+      let count = 0;
+
+      for (let day = 1; day <= currentDay; day++) {
+        if (!state.claimedCalendarDays.includes(day)) {
+          totalClaimedGems += getDayReward(day);
+          state.claimedCalendarDays.push(day);
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        state.gems += totalClaimedGems;
+        playSound('ssr');
+        saveState();
+        renderCalendar();
+      }
+    }
+
+    // --- DAILY & NORMAL QUESTS ---
+    function claimDaily() {
+      if (state.dailyClaimed) return;
+      state.gems += 5000;
+      state.dailyClaimed = true;
+      playSound('pop');
+      saveState();
+    }
+
+    function claimDailyPullQuest() {
+      if (state.dailyPullsCount >= 10 && !state.dailyPullClaimed) {
+        state.gems += 8000;
+        state.dailyPullClaimed = true;
+        playSound('ssr');
+        saveState();
+      }
+    }
+
+    function claimDailyPromoteQuest() {
+      if (state.dailyPromotesCount >= 1 && !state.dailyPromoteClaimed) {
+        state.gems += 6000;
+        state.dailyPromoteClaimed = true;
+        playSound('ssr');
+        saveState();
+      }
+    }
+
+    function mineClick() {
+      getAudioContext();
+      state.mineClicks++;
+      if (state.mineClicks >= 5) {
+        state.mineClicks = 0;
+        state.gems += 3000;
+        playSound('pop');
+      }
+      saveState();
+    }
+
+    // --- COUPON CODES ---
+    function redeemCoupon() {
+      const input = document.getElementById('couponInput');
+      const msg = document.getElementById('couponMsg');
+      const code = input.value.trim().toUpperCase();
+
+      if (!code) return;
+
+      if (state.redeemedCodes.includes(code)) {
+        msg.className = 'text-xs text-rose-400 font-semibold';
+        msg.innerText = 'Code already redeemed!';
+        return;
+      }
+
+      if (PROMO_CODES[code]) {
+        const reward = PROMO_CODES[code];
+        state.gems += reward;
+        state.redeemedCodes.push(code);
+        input.value = '';
+        msg.className = 'text-xs text-emerald-400 font-semibold';
+        msg.innerText = `Success! Added +${reward.toLocaleString()} Gems.`;
+        playSound('ssr');
+        saveState();
+      } else {
+        msg.className = 'text-xs text-rose-400 font-semibold';
+        msg.innerText = 'Invalid promo code.';
+      }
+    }
+
+    // --- FILTER HANDLER ---
+    function setFilter(filter) {
+      currentFilter = filter;
+      ['ALL', 'UR', 'SSR', 'SR', 'R'].forEach(f => {
+        const btn = document.getElementById(`filterBtn${f}`);
+        if (f === filter) {
+          btn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition';
+        }
+      });
+      renderInventory();
+    }
+
+    // --- RENDER INVENTORY (PINNED FIRST) ---
+    function renderInventory() {
+      const grid = document.getElementById('inventoryGrid');
+      grid.innerHTML = '';
+      const allItems = Object.entries(state.inventory);
+      document.getElementById('uniqueCount').innerText = allItems.length;
+
+      let filtered = allItems;
+      if (currentFilter !== 'ALL') {
+        filtered = allItems.filter(([_, data]) => data.tier === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="col-span-full py-8 text-center text-xs text-slate-500 italic">No emojis in this category.</div>';
+        return;
+      }
+
+      const tierWeight = { 'UR': 4, 'SSR': 3, 'SR': 2, 'R': 1 };
+      
+      // SORT: 1. Pinned -> 2. Tier -> 3. Rainbow -> 4. Stars
+      filtered.sort((a, b) => {
+        const pinA = a[1].isPinned ? 1 : 0;
+        const pinB = b[1].isPinned ? 1 : 0;
+        if (pinA !== pinB) return pinB - pinA;
+
+        if (tierWeight[b[1].tier] !== tierWeight[a[1].tier]) {
+          return tierWeight[b[1].tier] - tierWeight[a[1].tier];
+        }
+        if (b[1].isRainbow !== a[1].isRainbow) {
+          return b[1].isRainbow ? 1 : -1;
+        }
+        return b[1].stars - a[1].stars;
+      });
+
+      filtered.forEach(([emoji, data]) => {
+        const card = document.createElement('div');
+        let borderClass = 'border-slate-800 bg-slate-800/40 text-slate-400';
+        let tierTagClass = 'bg-slate-800 text-slate-400';
+
+        if (data.tier === 'UR') {
+          borderClass = 'glow-ur text-pink-300';
+          tierTagClass = 'bg-pink-500/30 text-pink-300';
+        } else if (data.tier === 'SSR') {
+          borderClass = 'glow-ssr text-amber-300';
+          tierTagClass = 'bg-amber-500/30 text-amber-300';
+        } else if (data.tier === 'SR') {
+          borderClass = 'glow-sr text-purple-300';
+          tierTagClass = 'bg-purple-500/30 text-purple-300';
+        }
+
+        const needed = STAR_REQUIREMENTS[data.stars] || 10;
+        const canPromote = !data.isRainbow && data.shards >= needed;
+
+        card.onclick = () => openEmojiModal(emoji);
+        card.className = `relative p-2.5 rounded-xl border flex flex-col items-center justify-center cursor-pointer active:scale-95 hover:border-slate-500 transition ${borderClass}`;
+        card.innerHTML = `
+          ${data.isPinned ? '<span class="absolute top-1.5 right-1.5 text-xs drop-shadow">📌</span>' : ''}
+          <div class="text-3xl mb-1">${emoji}</div>
+          <div class="text-[10px] font-bold truncate max-w-full text-center">${data.name}</div>
+          <div class="mt-1">${getStarsHtml(data.stars, data.isRainbow)}</div>
+          <div class="text-[8px] font-mono text-slate-400 mt-0.5">${data.isRainbow ? '🌈 Max' : `${data.shards}/${needed} Shards`}</div>
+          ${canPromote ? '<span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-slate-900 animate-ping"></span><span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-slate-900"></span>' : ''}
+          <span class="absolute top-1.5 left-1.5 text-[8px] font-black px-1.5 py-0.2 rounded ${tierTagClass}">${data.tier}</span>
+        `;
+        grid.appendChild(card);
+      });
+
+      updatePromoteAllBtnUI();
+    }
+
+    function renderUI() {
+      document.getElementById('gemCount').innerText = state.gems.toLocaleString();
+      document.getElementById('urPityCount').innerText = state.urPity;
+      document.getElementById('ssrPityCount').innerText = state.ssrPity;
+      document.getElementById('totalPullsCount').innerText = state.totalPulls;
+      document.getElementById('mascotIconBtn').innerText = state.mascot || '✨';
+
+      const headerShareBtn = document.getElementById('headerShareBtn');
+      if (headerShareBtn) headerShareBtn.classList.toggle('hidden', state.showShareBtn === false);
+
+      // Daily Login Quest
+      const dailyBtn = document.getElementById('dailyBtn');
+      if (state.dailyClaimed) {
+        dailyBtn.innerText = 'Claimed';
+        dailyBtn.className = 'text-xs bg-slate-800 text-slate-500 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed';
+      } else {
+        dailyBtn.innerText = 'Claim';
+        dailyBtn.className = 'text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 px-3 rounded-lg active:scale-95 transition';
+      }
+
+      // Daily 10 Pulls Quest
+      const dailyPullBtn = document.getElementById('dailyPullQuestBtn');
+      if (state.dailyPullClaimed) {
+        dailyPullBtn.innerText = 'Claimed';
+        dailyPullBtn.className = 'text-xs bg-slate-800 text-slate-500 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed';
+      } else if (state.dailyPullsCount >= 10) {
+        dailyPullBtn.innerText = 'Claim (+8k)';
+        dailyPullBtn.className = 'text-xs bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold py-1.5 px-3 rounded-lg transition cursor-pointer';
+      } else {
+        dailyPullBtn.innerText = `${state.dailyPullsCount}/10`;
+        dailyPullBtn.className = 'text-xs bg-slate-700 text-slate-400 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed transition';
+      }
+
+      // Daily Promote Quest
+      const dailyPromoteBtn = document.getElementById('dailyPromoteQuestBtn');
+      if (state.dailyPromoteClaimed) {
+        dailyPromoteBtn.innerText = 'Claimed';
+        dailyPromoteBtn.className = 'text-xs bg-slate-800 text-slate-500 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed';
+      } else if (state.dailyPromotesCount >= 1) {
+        dailyPromoteBtn.innerText = 'Claim (+6k)';
+        dailyPromoteBtn.className = 'text-xs bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold py-1.5 px-3 rounded-lg transition cursor-pointer';
+      } else {
+        dailyPromoteBtn.innerText = `${state.dailyPromotesCount}/1`;
+        dailyPromoteBtn.className = 'text-xs bg-slate-700 text-slate-400 font-semibold py-1.5 px-3 rounded-lg cursor-not-allowed transition';
+      }
+
+      document.getElementById('mineProgressText').innerText = `${state.mineClicks}/5 Hits`;
+
+      renderInventory();
+    }
+
+    // Initialize State on Launch
+    loadState();
+    resetAfkTimer();
+  </script>
+</body>
+</html>
