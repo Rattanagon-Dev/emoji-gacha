@@ -715,23 +715,26 @@ function startEmojiRain() {
     const allPools = [...POOL.UR, ...POOL.SSR, ...POOL.SR, ...POOL.R];
     const randomItem = allPools[Math.floor(Math.random() * allPools.length)];
 
-    drop.innerText = isShining ? (Math.random() < 0.5 ? '💠' : '💎') : randomItem.emoji;
-    const size = isShining ? 38 : Math.floor(Math.random() * 20) + 22;
-    drop.style.fontSize = `${size}px`;
     drop.style.position = 'absolute';
     drop.style.left = `${Math.random() * 90}%`;
     drop.style.top = '-60px';
     drop.style.transition = 'transform 8s linear, opacity 8s linear';
     drop.style.cursor = isShining ? 'pointer' : 'default';
 
+    const inner = document.createElement('span');
+    inner.innerText = isShining ? (Math.random() < 0.5 ? '💠' : '💎') : randomItem.emoji;
+    const size = isShining ? 38 : Math.floor(Math.random() * 20) + 22;
+    inner.style.fontSize = `${size}px`;
+    inner.style.display = 'inline-block';
+
     if (isShining) {
-      drop.className = 'shining-sparkle z-20 select-none';
+      inner.className = 'shining-sparkle z-20 select-none';
       drop.onclick = (e) => {
         e.stopPropagation();
         state.gems += 1000;
         saveState();
         playSound('ssr');
-        drop.style.transform = 'scale(2.2)';
+        inner.style.transform = 'scale(2.2)';
         drop.style.opacity = '0';
         setTimeout(() => drop.remove(), 250);
       };
@@ -739,6 +742,7 @@ function startEmojiRain() {
       drop.style.opacity = '0.35';
     }
 
+    drop.appendChild(inner);
     container.appendChild(drop);
 
     setTimeout(() => {
@@ -1251,14 +1255,13 @@ function triggerNextUrCutsceneWithTyping() {
 
 function showUrCutsceneDirect(item) {
   const cutscene = document.getElementById('cutsceneStage');
-  const body = document.getElementById('appBody');
 
   document.getElementById('cutsceneEmoji').innerText = item.emoji;
   document.getElementById('cutsceneItemName').innerText = item.name;
 
   cutscene.classList.remove('hidden');
-  body.classList.add('shake-screen');
-  setTimeout(() => body.classList.remove('shake-screen'), 450);
+  cutscene.classList.add('shake-screen');
+  setTimeout(() => cutscene.classList.remove('shake-screen'), 400);
 
   playSound('ur');
 }
