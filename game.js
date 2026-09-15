@@ -10,15 +10,31 @@ let fastModeEnabled = false;
 let laptopIntroEnabled = true;
 
 function getAudioContext() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
+    audioCtx.resume();
+  }
   return audioCtx;
 }
 
-['click', 'touchstart', 'touchend'].forEach(evt => {
+// Automatically resume the audio system upon screen interaction or when switching back to the app
+['click', 'touchstart', 'touchend', 'pointerdown'].forEach(evt => {
   window.addEventListener(evt, () => {
-    try { getAudioContext(); } catch(e){}
+    try {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state !== 'running') {
+        ctx.resume();
+      }
+    } catch(e){}
   }, { passive: true });
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && audioCtx && audioCtx.state !== 'running') {
+    audioCtx.resume();
+  }
 });
 
 function getChannelVol(type) {
@@ -700,6 +716,15 @@ function exitScreensaver() {
   clearInterval(rainInterval);
   document.getElementById('screensaverStage').classList.add('hidden');
   document.getElementById('screensaverRainBox').innerHTML = '';
+  
+  // Wake up the audio system immediately upon successful unlock via slider
+  try {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state !== 'running') {
+      ctx.resume();
+    }
+  } catch(e){}
+
   resetAfkTimer();
 }
 
