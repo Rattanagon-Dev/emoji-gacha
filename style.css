@@ -1,12 +1,12 @@
-/* Screen shake */
+/* Screen shake (Horizontal Only - No Viewport Drop) */
 @keyframes screenShake {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  20% { transform: translate(-10px, 8px) rotate(-1.5deg); }
-  40% { transform: translate(10px, -8px) rotate(1.5deg); }
-  60% { transform: translate(-6px, -4px) rotate(-0.5deg); }
-  80% { transform: translate(6px, 5px) rotate(0.5deg); }
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
 }
-.shake-screen { animation: screenShake 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+.shake-screen { animation: screenShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 
 /* Gradual Cinematic Laptop Zoom */
 @keyframes smoothLaptopZoomAnim {
