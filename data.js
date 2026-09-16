@@ -202,7 +202,45 @@ const FACES_POOL = {
   ]
 };
 
-const BANNER_POOLS = { cosmos: POOL, faces: FACES_POOL };
+// --- ALL-STAR COMBINED POOL (Universal Banner) ---
+const ALL_POOL = {
+  UR: [...POOL.UR, ...FACES_POOL.UR],
+  SSR: [...POOL.SSR, ...FACES_POOL.SSR],
+  SR: [...POOL.SR, ...FACES_POOL.SR],
+  R: [...POOL.R, ...FACES_POOL.R]
+};
+
+const BANNER_POOLS = { cosmos: POOL, faces: FACES_POOL, all: ALL_POOL };
+
+const BANNERS = [
+  {
+    id: 'cosmos',
+    icon: '💠',
+    tabLabel: 'Celestial Cosmos',
+    title: 'Celestial Cosmos',
+    tagline: '10-Pull guarantees SR or higher! Guaranteed SSR at 40, UR at 100 pulls.',
+    ringClass: 'border-pink-400/50 shadow-pink-500/20',
+    badgeClass: 'bg-pink-500/20 border-pink-400/40 text-pink-300'
+  },
+  {
+    id: 'faces',
+    icon: '🥳',
+    tabLabel: 'Feelings Parade',
+    title: 'Feelings Parade',
+    tagline: 'A rotating cast of expressions! Same guarantees, brand-new faces to collect.',
+    ringClass: 'border-amber-400/50 shadow-amber-500/20',
+    badgeClass: 'bg-amber-500/20 border-amber-400/40 text-amber-300'
+  },
+  {
+    id: 'all',
+    icon: '🌌',
+    tabLabel: 'Omniverse All-Stars',
+    title: 'Omniverse All-Stars',
+    tagline: 'All emojis from Cosmos and Feelings Parade combined in one massive pool!',
+    ringClass: 'border-fuchsia-400/50 shadow-fuchsia-500/20',
+    badgeClass: 'bg-fuchsia-500/20 border-fuchsia-400/40 text-fuchsia-300'
+  }
+];
 
 const BANNERS = [
   {
