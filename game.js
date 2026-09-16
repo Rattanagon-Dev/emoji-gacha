@@ -2371,9 +2371,7 @@ function renderUI() {
 
 // --- BILINGUAL SYSTEM ---
 function getActiveLang() {
-  if (state.lang === 'en') return 'en';
-  const nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-  return nav.startsWith('th') ? 'th' : 'en';
+  return state.lang === 'th' ? 'th' : 'en';
 }
 
 function setLanguage(lang) {
@@ -2383,19 +2381,20 @@ function setLanguage(lang) {
 }
 
 function t(key) {
-  const l = getActiveLang();
-  return (UI_TRANSLATIONS[l] && UI_TRANSLATIONS[l][key]) || (UI_TRANSLATIONS['en'] && UI_TRANSLATIONS['en'][key]) || key;
+  const currentLang = getActiveLang();
+  return (UI_TRANSLATIONS[currentLang] && UI_TRANSLATIONS[currentLang][key]) || (UI_TRANSLATIONS['en'] && UI_TRANSLATIONS['en'][key]) || key;
 }
 
 function applyLanguage() {
-  const isEn = (state.lang === 'en');
-  const btnAuto = document.getElementById('langBtn_auto');
+  const isThai = (state.lang === 'th');
+  const btnTh = document.getElementById('langBtn_th');
   const btnEn = document.getElementById('langBtn_en');
-  if (btnAuto && btnEn) {
-    btnAuto.className = !isEn
+
+  if (btnTh && btnEn) {
+    btnTh.className = isThai
       ? 'py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex items-center justify-center gap-1.5'
       : 'py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5';
-    btnEn.className = isEn
+    btnEn.className = !isThai
       ? 'py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex items-center justify-center gap-1.5'
       : 'py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5';
   }
