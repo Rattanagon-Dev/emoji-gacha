@@ -147,25 +147,25 @@
         </div>
       </div>
 
-      <!-- Inventory / Collection Section -->
+            <!-- Inventory / Collection Section -->
       <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 shadow-lg">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-          <div>
-            <div class="flex items-center gap-2">
-              <h3 class="font-bold text-lg text-slate-200 flex items-center gap-2">
-                <span>🎒</span> Collection (<span id="uniqueCount">0</span>)
+          <div class="w-full sm:w-auto">
+            <div class="flex items-center justify-between sm:justify-start gap-2 w-full">
+              <h3 class="font-bold text-base sm:text-lg text-slate-200 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                <span>🎒</span> <span id="txt_col_title">Collection</span> <span class="text-xs sm:text-sm text-indigo-300 font-mono">(<span id="uniqueCount">0</span>)</span>
               </h3>
               <!-- PROMOTE ALL BUTTON -->
-              <button id="promoteAllBtn" onclick="promoteAllEmojis()" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 active:scale-95 shadow-md shadow-amber-500/20 transition cursor-pointer">
+              <button id="promoteAllBtn" onclick="promoteAllEmojis()" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 active:scale-95 shadow-md shadow-amber-500/20 transition cursor-pointer shrink-0">
                 <span>⚡</span>
                 <span id="promoteAllBtnText">Promote All</span>
               </button>
             </div>
-            <span class="text-[11px] text-slate-400">💡 Tap any card to upgrade stars or 📌 Pin to Top!</span>
+            <span id="txt_col_hint" class="text-[11px] text-slate-400 block mt-1">💡 Tap any card to upgrade stars or 📌 Pin to Top!</span>
           </div>
 
-         <!-- Dual Filter Tabs: Series + Tier -->
-          <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+          <!-- Dual Filter Tabs: Series + Tier -->
+          <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 w-full sm:w-auto justify-end">
             <div class="flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800 text-[11px] font-bold">
               <button onclick="setSeriesFilter('ALL')" id="seriesBtn_ALL" class="px-2 py-1 rounded-lg bg-indigo-600 text-white transition">All Sets</button>
               <button onclick="setSeriesFilter('cosmos')" id="seriesBtn_cosmos" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white transition">Cosmos</button>
@@ -683,6 +683,21 @@
         </div>
       </div>
       
+            <!-- Language Switcher (Auto vs English) -->
+      <div class="space-y-2.5 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-800/80">
+        <label class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <span>🌐</span> Language / ภาษา
+        </label>
+        <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+          <button onclick="setLanguage('auto')" id="langBtn_auto" class="py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex items-center justify-center gap-1.5">
+            <span>📱</span> <span>Auto (เครื่อง)</span>
+          </button>
+          <button onclick="setLanguage('en')" id="langBtn_en" class="py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5">
+            <span>🇬🇧</span> <span>English</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Digital Clock Customizer -->
       <div class="space-y-2.5 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-800/80">
         <label class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
@@ -913,12 +928,25 @@
           <h3 class="text-lg font-black text-white flex items-center gap-2">
             <span>📜</span> Patch Notes Log
           </h3>
-          <span class="text-[11px] text-indigo-400 font-mono">Current Version: v2.7.0</span>
+          <span class="text-[11px] text-indigo-400 font-mono">Current Version: v2.8.0</span>
         </div>
         <button onclick="closePatchNotesModal()" class="text-slate-400 hover:text-white">✕</button>
       </div>
 
       <div class="overflow-y-auto space-y-4 my-4 pr-1 text-xs text-slate-300">
+                <!-- v2.8.0 -->
+        <div class="border-l-2 border-indigo-500 pl-3 space-y-1.5">
+          <div class="font-black text-white text-sm">v2.8.0 - "Omniverse & Mobile Polish"</div>
+          <div class="text-[10px] text-slate-500 font-mono">Latest Release · Sep 2026</div>
+          <ul class="list-disc list-inside space-y-1 text-slate-400 leading-relaxed">
+            <li><strong>Mobile Layout Polish:</strong> Fixed calendar attendance buttons overlapping rows below on phones; resolved Collection counter wrapping.</li>
+            <li><strong>Language Switcher:</strong> Added bilingual support (Auto Device Language vs English) across primary game UI.</li>
+            <li><strong>Omniverse All-Stars:</strong> New universal banner combining Cosmos and Feelings Parade rosters.</li>
+            <li><strong>Target Focus Modal:</strong> Replaced horizontal slider with high-accessibility pick-up selection modal.</li>
+            <li><strong>Pity Guarantee Integrity:</strong> 100th UR hard-pity summon will never trigger deceptive fakeout cards.</li>
+          </ul>
+        </div>
+
         <!-- v2.7.0 -->
         <div class="border-l-2 border-pink-500 pl-3 space-y-1.5">
           <div class="font-black text-white text-sm">v2.7.0 - "Terminal Decryption & Pity Overhaul"</div>
@@ -980,7 +1008,8 @@
         </button>
       </div>
 
-      <div id="calendarGrid" class="grid grid-cols-5 sm:grid-cols-7 gap-2 overflow-y-auto my-4 py-2 pr-1"></div>
+            <div id="calendarGrid" class="grid grid-cols-5 sm:grid-cols-7 gap-y-4 gap-x-1.5 sm:gap-3 overflow-y-auto my-4 py-2 pr-1"></div>
+
 
       <button onclick="closeCalendarModal()" class="mt-2 w-full bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition">
         Close Calendar
