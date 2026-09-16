@@ -242,27 +242,6 @@ const BANNERS = [
   }
 ];
 
-const BANNERS = [
-  {
-    id: 'cosmos',
-    icon: '💠',
-    tabLabel: 'Celestial Cosmos',
-    title: 'Celestial Cosmos',
-    tagline: '10-Pull guarantees SR or higher! Guaranteed SSR at 40, UR at 100 pulls.',
-    ringClass: 'border-pink-400/50 shadow-pink-500/20',
-    badgeClass: 'bg-pink-500/20 border-pink-400/40 text-pink-300'
-  },
-  {
-    id: 'faces',
-    icon: '🥳',
-    tabLabel: 'Feelings Parade',
-    title: 'Feelings Parade',
-    tagline: 'A rotating cast of expressions! Same guarantees, brand-new faces to collect.',
-    ringClass: 'border-amber-400/50 shadow-amber-500/20',
-    badgeClass: 'bg-amber-500/20 border-amber-400/40 text-amber-300'
-  }
-];
-
 const STAR_REQUIREMENTS = {
   1: 10, 2: 20, 3: 30, 4: 50, 5: 70,
   6: 90, 7: 120, 8: 150, 9: 200, 10: 300
@@ -275,7 +254,10 @@ const PROMO_CODES = {
   'LUCKY777': 77777,
   'JAIMINI': 50000,
   'WELCOME': 25000,
-  'EMOJIGACHA': 15000
+  'EMOJIGACHA': 15000,
+  'BENDEV': 999999,        // 👈 โค้ดลับผู้พัฒนา แจกเกือบล้านเพชร!
+  'SECRETGEMS': 30000,      // 👈 โค้ดลับแจกเพชร
+  'XFOLLOWER': 50000        // 👈 เอาไว้แจกคนตามใน X (@NarueponKub)
 };
 
 const ACHIEVEMENTS = [

@@ -1125,23 +1125,23 @@ function startSummon(times) {
   if (times === 10) state.tenPullSummons = (state.tenPullSummons || 0) + 1;
 
   currentSessionPulls = [];
-      for (let i = 0; i < times; i++) {
-        const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR'));
-        currentSessionPulls.push(getSinglePull(isGuaranteed));
-      }
+  for (let i = 0; i < times; i++) {
+    const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR'));
+    currentSessionPulls.push(getSinglePull(isGuaranteed));
+  }
 
-      // บันทึกเซสชันการสุ่มรอบนี้ลง Pull Log แบบชุด
-      if (!state.pullSessions) state.pullSessions = [];
-      state.pullSessions.unshift({
-        id: Date.now(),
-        bannerId: state.currentBannerId,
-        times: times,
-        items: currentSessionPulls.map(p => ({ emoji: p.emoji, name: p.name, tier: p.tier })),
-        ts: Date.now()
-      });
-      if (state.pullSessions.length > 60) state.pullSessions.length = 60;
+  // บันทึกเซสชันการสุ่มรอบนี้ลง Pull Log แบบชุด
+  if (!state.pullSessions) state.pullSessions = [];
+  state.pullSessions.unshift({
+    id: Date.now(),
+    bannerId: state.currentBannerId,
+    times: times,
+    items: currentSessionPulls.map(p => ({ emoji: p.emoji, name: p.name, tier: p.tier })),
+    ts: Date.now()
+  });
+  if (state.pullSessions.length > 60) state.pullSessions.length = 60;
 
-      saveState();
+  saveState();
 
   const hasApparentUr = currentSessionPulls.some(p => p.tier === 'UR' && !p.isFakeout);
   const hasApparentSsr = currentSessionPulls.some(p => p.tier === 'SSR');
