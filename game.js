@@ -199,7 +199,7 @@ function playSound(type) {
 function getDefaultState() {
   const now = new Date();
   return {
-    gems: 25000, // 25k starting gems
+    gems: 25000,
     urPity: 0,
     ssrPity: 0,
     totalPulls: 0,
@@ -229,17 +229,21 @@ function getDefaultState() {
     wpPosX: 50,
     wpPosY: 50,
     currentBannerId: 'cosmos',
-    focusTargets: { cosmos: null, faces: null },
+    focusTargets: { cosmos: null, faces: null, all: null },
     pullLog: [],
+    pullSessions: [],
     tenPullSummons: 0,
     unlockedAchievements: [],
-    pullsSinceLastExport: 0
+    pullsSinceLastExport: 0,
+    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true }
   };
 }
 
 let state = getDefaultState();
 let currentFilter = 'ALL';
+let currentSeriesFilter = 'ALL';
 let codexFilter = 'ALL';
+let codexSeriesFilter = 'ALL';
 let currentSessionPulls = [];
 let currentRevealIndex = 0;
 let selectedEmoji = null;
@@ -314,24 +318,51 @@ function renderAchievements() {
 // --- EXPORT-SAVE REMINDER ---
 function checkExportReminder() {
   if (state.pullsSinceLastExport > 0 && state.pullsSinceLastExport % 200 === 0) {
-    showToast(`<div class="flex items-center gap-3"><span class="text-2xl">💾</span><div class="flex-1"><div class="font-bold text-white text-sm">อย่าลืมสำรองข้อมูล!</div><div class="text-[11px] text-slate-400 mb-1.5">คุณสุ่มไปเยอะแล้ว ก็อป Save Data เก็บไว้กันเหนียวนะ</div><button onclick="document.getElementById('toastHost').innerHTML='';openSettingsModal();" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg font-bold">ไปที่ Settings</button></div></div>`, 6000);
+    showToast(`<div class="flex items-center gap-3"><span class="text-2xl">💾</span><div class="flex-1"><div class="font-bold text-white text-sm">Backup Reminder!</div><div class="text-[11px] text-slate-400 mb-1.5">You've performed many pulls. Copy your Save Data string to prevent progress loss!</div><button onclick="document.getElementById('toastHost').innerHTML='';openSettingsModal();" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 px-2.5 py-1 rounded-lg font-bold">Go to Settings</button></div></div>`, 6000);
   }
 }
 
-// --- BANNER SWITCHING & PICK-UP FOCUS ---
-function switchBanner(id) {
-  if (!BANNER_POOLS[id]) return;
-  state.currentBannerId = id;
-  bannerEmojiIndex = 0;
-  renderBannerUI();
-  saveState();
+function openPickupModal() {
+  renderPickupModal();
+  document.getElementById('pickupModal').classList.remove('hidden');
 }
 
-function toggleFocusTarget(emoji) {
-  const bid = state.currentBannerId;
-  state.focusTargets[bid] = (state.focusTargets[bid] === emoji) ? null : emoji;
-  renderBannerUI();
+function closePickupModal() {
+  document.getElementById('pickupModal').classList.add('hidden');
+}
+
+function selectPickupTarget(emoji) {
+  state.focusTargets[state.currentBannerId] = emoji;
   saveState();
+  renderBannerUI();
+  closePickupModal();
+}
+
+function clearPickupTarget() {
+  state.focusTargets[state.currentBannerId] = null;
+  saveState();
+  renderBannerUI();
+  closePickupModal();
+}
+
+function renderPickupModal() {
+  const grid = document.getElementById('pickupModalGrid');
+  if (!grid) return;
+  const activePool = BANNER_POOLS[state.currentBannerId] || POOL;
+  const currentFocused = state.focusTargets[state.currentBannerId];
+  
+  grid.innerHTML = activePool.UR.map(item => {
+    const isSel = currentFocused === item.emoji;
+    return `
+      <button onclick="selectPickupTarget('${item.emoji}')" class="flex items-center gap-3 p-2.5 rounded-2xl border transition active:scale-95 text-left ${isSel ? 'bg-amber-500/20 border-amber-400 text-amber-200' : 'bg-slate-800 hover:bg-slate-700/80 border-slate-700 text-slate-200'}">
+        <span class="text-3xl">${item.emoji}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold truncate">${item.name}</div>
+          <div class="text-[10px] ${isSel ? 'text-amber-300 font-bold' : 'text-slate-400'}">${isSel ? '✓ Active Focus' : 'Tap to select'}</div>
+        </div>
+      </button>
+    `;
+  }).join('');
 }
 
 function renderBannerUI() {
@@ -340,6 +371,25 @@ function renderBannerUI() {
   const taglineEl = document.getElementById('bannerTagline');
   if (titleEl) titleEl.innerText = banner.title;
   if (taglineEl) taglineEl.innerText = banner.tagline;
+
+  document.querySelectorAll('.bannerTabBtn').forEach(btn => {
+    const isActive = btn.dataset.bannerId === state.currentBannerId;
+    btn.className = 'bannerTabBtn text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 ' +
+      (isActive ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white');
+  });
+
+  const activePool = BANNER_POOLS[state.currentBannerId] || POOL;
+  const focused = state.focusTargets[state.currentBannerId];
+  const displayEl = document.getElementById('bannerFocusDisplay');
+  if (displayEl) {
+    if (focused) {
+      const found = activePool.UR.find(i => i.emoji === focused);
+      displayEl.innerHTML = `<span class="text-base mr-1">${focused}</span> ${found ? found.name : ''} (2x rate)`;
+    } else {
+      displayEl.innerText = 'None (Standard Rates)';
+    }
+  }
+}
 
   document.querySelectorAll('.bannerTabBtn').forEach(btn => {
     const isActive = btn.dataset.bannerId === state.currentBannerId;
@@ -390,29 +440,54 @@ function renderPullLog() {
   if (filterBtn) {
     filterBtn.className = 'text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 ' +
       (pullLogUrOnly ? 'bg-pink-600 border-pink-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white');
-    filterBtn.innerText = pullLogUrOnly ? '🌟 Showing UR Only' : '🌟 Show UR Only';
+    filterBtn.innerText = pullLogUrOnly ? '🌟 Showing Packs with UR' : '🌟 Show UR Packs Only';
   }
   if (!list) return;
-  let entries = state.pullLog || [];
-  if (pullLogUrOnly) entries = entries.filter(e => e.tier === 'UR');
-  if (entries.length === 0) {
-    list.innerHTML = `<div class="py-8 text-center text-xs text-slate-500 italic">${pullLogUrOnly ? 'No UR pulls yet — keep summoning!' : 'No pulls yet.'}</div>`;
+
+  let sessions = state.pullSessions || [];
+  if (pullLogUrOnly) {
+    sessions = sessions.filter(s => s.items.some(it => it.tier === 'UR'));
+  }
+
+  if (sessions.length === 0) {
+    list.innerHTML = `<div class="py-8 text-center text-xs text-slate-500 italic">${pullLogUrOnly ? 'No packs contain UR yet — keep summoning!' : 'No summons recorded yet.'}</div>`;
     return;
   }
-  const tierClass = { UR: 'text-pink-300 bg-pink-500/15', SSR: 'text-amber-300 bg-amber-500/15', SR: 'text-purple-300 bg-purple-500/15', R: 'text-slate-400 bg-slate-700/40' };
-  list.innerHTML = entries.slice(0, 200).map(e => {
-    const d = new Date(e.ts);
-    const timeStr = `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ${d.toTimeString().slice(0, 8)}`;
-    const bannerName = (BANNERS.find(b => b.id === e.bannerId) || {}).tabLabel || '';
-    return `
-      <div class="flex items-center gap-3 py-2 px-2.5 rounded-xl ${e.tier === 'UR' ? 'bg-pink-500/5' : ''}">
-        <span class="text-xl w-8 text-center">${e.emoji}</span>
-        <div class="flex-1 min-w-0">
-          <div class="text-xs font-semibold text-slate-200 truncate">${e.name}</div>
-          <div class="text-[10px] text-slate-500">${timeStr} · ${bannerName}</div>
+
+  list.innerHTML = sessions.map(s => {
+    const d = new Date(s.ts);
+    const timeStr = `${d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} · ${d.toTimeString().slice(0, 8)}`;
+    const banner = BANNERS.find(b => b.id === s.bannerId) || { tabLabel: 'Standard' };
+    const hasUr = s.items.some(i => i.tier === 'UR');
+
+    const cardsHtml = s.items.map(it => {
+      let glow = 'bg-slate-800/80 border-slate-700 text-slate-300';
+      if (it.tier === 'UR') glow = 'glow-ur border-pink-400 text-pink-200';
+      else if (it.tier === 'SSR') glow = 'glow-ssr border-amber-400 text-amber-200';
+      else if (it.tier === 'SR') glow = 'glow-sr border-purple-400 text-purple-200';
+
+      return `
+        <div class="p-1.5 rounded-xl border flex flex-col items-center justify-center text-center aspect-square ${glow}">
+          <span class="text-xl sm:text-2xl">${it.emoji}</span>
+          <span class="text-[8px] font-mono font-bold uppercase mt-0.5">${it.tier}</span>
         </div>
-        <span class="text-[10px] font-black px-1.5 py-0.5 rounded ${tierClass[e.tier] || ''}">${e.tier}</span>
-      </div>`;
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-slate-950/60 border ${hasUr ? 'border-pink-500/40' : 'border-slate-800'} rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between text-[11px] font-mono">
+          <span class="font-bold text-slate-300 flex items-center gap-1.5">
+            <span>📦 ${s.times}x Pull</span>
+            <span class="text-indigo-400">(${banner.tabLabel})</span>
+          </span>
+          <span class="text-slate-500">${timeStr}</span>
+        </div>
+        <div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+          ${cardsHtml}
+        </div>
+      </div>
+    `;
   }).join('');
 }
 
@@ -471,48 +546,56 @@ function loadState() {
 
 // --- REALTIME DIGITAL CLOCK WITH DATE, UTC & TIMEZONE ---
 function updateDigitalClock() {
+  const cfg = (state && state.clockConfig) || { showDate: true, showTime: true, showUtc: true, showLocation: true };
   const now = new Date();
   const pad = (n) => n.toString().padStart(2, '0');
-  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const dateStr = now.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
+  
+  const parts = [];
 
-  const offsetMinutes = -now.getTimezoneOffset();
-  const offsetSign = offsetMinutes >= 0 ? '+' : '-';
-  const absOffset = Math.abs(offsetMinutes);
-  const offsetHours = Math.floor(absOffset / 60);
-  const offsetMins = absOffset % 60;
-  const utcStr = `UTC${offsetSign}${offsetHours}${offsetMins ? `:${String(offsetMins).padStart(2, '0')}` : ''}`;
+  if (cfg.showDate) {
+    parts.push(now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }));
+  }
 
-  let zoneLabel = 'Local';
-  try {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    const countryMap = {
-      'Asia/Bangkok': 'Thailand',
-      'Asia/Tokyo': 'Japan',
-      'Asia/Seoul': 'South Korea',
-      'Asia/Shanghai': 'China',
-      'Asia/Hong_Kong': 'Hong Kong',
-      'Asia/Singapore': 'Singapore',
-      'Asia/Taipei': 'Taiwan',
-      'Europe/London': 'United Kingdom',
-      'Europe/Paris': 'France',
-      'Europe/Berlin': 'Germany',
-      'America/New_York': 'USA',
-      'America/Los_Angeles': 'USA',
-      'America/Chicago': 'USA',
-      'Australia/Sydney': 'Australia'
-    };
-    zoneLabel = countryMap[zone] || zone.replace(/_/g, ' ') || 'Local';
-  } catch (e) {}
+  if (cfg.showTime) {
+    parts.push(`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`);
+  }
+
+  if (cfg.showUtc) {
+    const offsetMinutes = -now.getTimezoneOffset();
+    const offsetSign = offsetMinutes >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offsetMinutes);
+    const offsetHours = Math.floor(absOffset / 60);
+    const offsetMins = absOffset % 60;
+    parts.push(`UTC${offsetSign}${offsetHours}${offsetMins ? `:${String(offsetMins).padStart(2, '0')}` : ''}`);
+  }
+
+  if (cfg.showLocation) {
+    let zoneLabel = 'Local';
+    try {
+      const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const countryMap = {
+        'Asia/Bangkok': 'Thailand', 'Asia/Tokyo': 'Japan', 'Asia/Seoul': 'South Korea',
+        'Asia/Shanghai': 'China', 'Asia/Hong_Kong': 'Hong Kong', 'Asia/Singapore': 'Singapore',
+        'Asia/Taipei': 'Taiwan', 'Europe/London': 'UK', 'Europe/Paris': 'France',
+        'Europe/Berlin': 'Germany', 'America/New_York': 'USA', 'America/Los_Angeles': 'USA',
+        'Australia/Sydney': 'Australia'
+      };
+      zoneLabel = countryMap[zone] || zone.split('/')[1]?.replace(/_/g, ' ') || 'Local';
+    } catch (e) {}
+    parts.push(zoneLabel);
+  }
 
   const clockEl = document.getElementById('digitalClock');
   if (clockEl) {
-    clockEl.innerText = `${dateStr} · ${timeStr} · ${utcStr} · ${zoneLabel}`;
+    clockEl.innerText = parts.length > 0 ? parts.join(' · ') : '--:--';
   }
+}
+
+function toggleClockSetting(key, val) {
+  if (!state.clockConfig) state.clockConfig = { showDate: true, showTime: true, showUtc: true, showLocation: true };
+  state.clockConfig[key] = val;
+  saveState();
+  updateDigitalClock();
 }
 setInterval(updateDigitalClock, 1000);
 updateDigitalClock();
@@ -859,25 +942,49 @@ function applyLayout(mode) {
 function openMascotModal() {
   const grid = document.getElementById('mascotGrid');
   grid.innerHTML = '';
-  const items = Object.keys(state.inventory);
+  const entries = Object.entries(state.inventory);
 
-  if (items.length === 0) {
+  if (entries.length === 0) {
     grid.innerHTML = '<div class="col-span-full py-4 text-xs text-slate-500 italic text-center">Pull emojis first to set them as mascot!</div>';
-  } else {
-    items.forEach(emoji => {
-      const btn = document.createElement('button');
-      btn.className = 'p-2 text-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl border border-slate-700 transition flex items-center justify-center';
-      btn.innerText = emoji;
-      btn.onclick = () => {
-        state.mascot = emoji;
-        saveState();
-        closeMascotModal();
-      };
-      grid.appendChild(btn);
-    });
+    document.getElementById('mascotModal').classList.remove('hidden');
+    return;
   }
 
+  const tierGroups = { 'UR': [], 'SSR': [], 'SR': [], 'R': [] };
+  entries.forEach(([emoji, data]) => {
+    if (tierGroups[data.tier]) tierGroups[data.tier].push({ emoji, ...data });
+  });
+
+  const tierColors = {
+    UR: 'text-pink-400 border-pink-500/30',
+    SSR: 'text-amber-400 border-amber-500/30',
+    SR: 'text-purple-400 border-purple-500/30',
+    R: 'text-slate-400 border-slate-700'
+  };
+
+  let html = '';
+  ['UR', 'SSR', 'SR', 'R'].forEach(tier => {
+    if (tierGroups[tier].length > 0) {
+      html += `<div class="col-span-full text-[11px] font-black tracking-wider uppercase pt-2 pb-1 border-b border-slate-800 ${tierColors[tier]} flex items-center justify-between">
+        <span>${tier} Tier</span>
+        <span class="text-[10px] text-slate-500 font-mono">${tierGroups[tier].length} unlocked</span>
+      </div>`;
+      tierGroups[tier].forEach(item => {
+        html += `<button onclick="setMascot('${item.emoji}')" title="${item.name}" class="p-2 text-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl border border-slate-700 transition flex items-center justify-center">
+          ${item.emoji}
+        </button>`;
+      });
+    }
+  });
+
+  grid.innerHTML = html;
   document.getElementById('mascotModal').classList.remove('hidden');
+}
+
+function setMascot(emoji) {
+  state.mascot = emoji;
+  saveState();
+  closeMascotModal();
 }
 
 function closeMascotModal() {
@@ -902,9 +1009,10 @@ function getSinglePull(is10thGuaranteed = false) {
   state.dailyPullsCount++;
 
   let tier = 'R';
+  const isPityUr = (state.urPity >= 100);
 
   // 1. UR Pity at 100 or 0.8% base
-  if (state.urPity >= 100 || Math.random() < 0.008) {
+  if (isPityUr || Math.random() < 0.008) {
     tier = 'UR';
     state.urPity = 0;
     state.ssrPity = 0;
@@ -948,10 +1056,10 @@ function getSinglePull(is10thGuaranteed = false) {
 
   const currentItem = state.inventory[chosen.emoji];
 
-  // FAKEOUT (35% chance for UR to disguise as R or SR)
+  // FAKEOUT: ไม่เกิดในครั้งการันตี 100 โรลเด็ดขาด (!isPityUr)
   let isFakeout = false;
   let fakeoutDisguise = null;
-  if (state.fakeoutEnabled && tier === 'UR' && Math.random() < 0.35) {
+  if (state.fakeoutEnabled && tier === 'UR' && !isPityUr && Math.random() < 0.35) {
     isFakeout = true;
     const disguisePool = Math.random() < 0.6 ? activePool.SR : activePool.R;
     fakeoutDisguise = disguisePool[Math.floor(Math.random() * disguisePool.length)];
@@ -1017,12 +1125,23 @@ function startSummon(times) {
   if (times === 10) state.tenPullSummons = (state.tenPullSummons || 0) + 1;
 
   currentSessionPulls = [];
-  for (let i = 0; i < times; i++) {
-    const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR'));
-    currentSessionPulls.push(getSinglePull(isGuaranteed));
-  }
+      for (let i = 0; i < times; i++) {
+        const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR'));
+        currentSessionPulls.push(getSinglePull(isGuaranteed));
+      }
 
-  saveState();
+      // บันทึกเซสชันการสุ่มรอบนี้ลง Pull Log แบบชุด
+      if (!state.pullSessions) state.pullSessions = [];
+      state.pullSessions.unshift({
+        id: Date.now(),
+        bannerId: state.currentBannerId,
+        times: times,
+        items: currentSessionPulls.map(p => ({ emoji: p.emoji, name: p.name, tier: p.tier })),
+        ts: Date.now()
+      });
+      if (state.pullSessions.length > 60) state.pullSessions.length = 60;
+
+      saveState();
 
   const hasApparentUr = currentSessionPulls.some(p => p.tier === 'UR' && !p.isFakeout);
   const hasApparentSsr = currentSessionPulls.some(p => p.tier === 'SSR');
@@ -1355,15 +1474,31 @@ function setCodexFilter(filter) {
   renderCodex();
 }
 
+function setCodexSeriesFilter(series) {
+  codexSeriesFilter = series;
+  ['ALL', 'cosmos', 'faces'].forEach(tab => {
+    const btn = document.getElementById(`codexSeries_${tab}`);
+    if (btn) {
+      btn.className = (tab === series)
+        ? 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition'
+        : 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition';
+    }
+  });
+  renderCodex();
+}
+
 function renderCodex() {
   const grid = document.getElementById('codexGrid');
+  if (!grid) return;
   grid.innerHTML = '';
 
-  let allEntries = [];
+  const allEntries = [];
+  // นำเข้าทั้งตู้ Cosmos และ Feelings Parade พร้อมแท็ก Series
   Object.keys(POOL).forEach(tier => {
-    POOL[tier].forEach(item => {
-      allEntries.push({ ...item, tier });
-    });
+    POOL[tier].forEach(item => allEntries.push({ ...item, tier, series: 'cosmos' }));
+  });
+  Object.keys(FACES_POOL).forEach(tier => {
+    FACES_POOL[tier].forEach(item => allEntries.push({ ...item, tier, series: 'faces' }));
   });
 
   const totalCount = allEntries.length;
@@ -1372,8 +1507,11 @@ function renderCodex() {
   document.getElementById('codexProgressText').innerText = `Discovered: ${discoveredCount} / ${totalCount} (${percentage}%)`;
 
   let filtered = allEntries;
+  if (codexSeriesFilter !== 'ALL') {
+    filtered = filtered.filter(e => e.series === codexSeriesFilter);
+  }
   if (codexFilter !== 'ALL') {
-    filtered = allEntries.filter(e => e.tier === codexFilter);
+    filtered = filtered.filter(e => e.tier === codexFilter);
   }
 
   filtered.forEach(entry => {
@@ -2110,15 +2248,37 @@ function setFilter(filter) {
 }
 
 // --- RENDER INVENTORY (PINNED FIRST) ---
+function setSeriesFilter(series) {
+  currentSeriesFilter = series;
+  ['ALL', 'cosmos', 'faces'].forEach(tab => {
+    const btn = document.getElementById(`seriesBtn_${tab}`);
+    if (btn) {
+      btn.className = (tab === series)
+        ? 'px-2 py-1 rounded-lg bg-indigo-600 text-white transition'
+        : 'px-2 py-1 rounded-lg text-slate-400 hover:text-white transition';
+    }
+  });
+  renderInventory();
+}
+
 function renderInventory() {
   const grid = document.getElementById('inventoryGrid');
+  if (!grid) return;
   grid.innerHTML = '';
   const allItems = Object.entries(state.inventory);
   document.getElementById('uniqueCount').innerText = allItems.length;
 
+  const isFacesEmoji = (em) => Object.values(FACES_POOL).some(list => list.some(i => i.emoji === em));
+
   let filtered = allItems;
+  if (currentSeriesFilter === 'cosmos') {
+    filtered = filtered.filter(([emoji]) => !isFacesEmoji(emoji));
+  } else if (currentSeriesFilter === 'faces') {
+    filtered = filtered.filter(([emoji]) => isFacesEmoji(emoji));
+  }
+
   if (currentFilter !== 'ALL') {
-    filtered = allItems.filter(([_, data]) => data.tier === currentFilter);
+    filtered = filtered.filter(([_, data]) => data.tier === currentFilter);
   }
 
   if (filtered.length === 0) {
@@ -2127,19 +2287,12 @@ function renderInventory() {
   }
 
   const tierWeight = { 'UR': 4, 'SSR': 3, 'SR': 2, 'R': 1 };
-  
-  // SORT: 1. Pinned -> 2. Tier -> 3. Rainbow -> 4. Stars
   filtered.sort((a, b) => {
     const pinA = a[1].isPinned ? 1 : 0;
     const pinB = b[1].isPinned ? 1 : 0;
     if (pinA !== pinB) return pinB - pinA;
-
-    if (tierWeight[b[1].tier] !== tierWeight[a[1].tier]) {
-      return tierWeight[b[1].tier] - tierWeight[a[1].tier];
-    }
-    if (b[1].isRainbow !== a[1].isRainbow) {
-      return b[1].isRainbow ? 1 : -1;
-    }
+    if (tierWeight[b[1].tier] !== tierWeight[a[1].tier]) return tierWeight[b[1].tier] - tierWeight[a[1].tier];
+    if (b[1].isRainbow !== a[1].isRainbow) return b[1].isRainbow ? 1 : -1;
     return b[1].stars - a[1].stars;
   });
 
