@@ -235,7 +235,7 @@ function getDefaultState() {
     tenPullSummons: 0,
     unlockedAchievements: [],
     pullsSinceLastExport: 0,
-    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true }, lang: 'auto'
+    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true }, lang: 'en'
 
   };
 }
