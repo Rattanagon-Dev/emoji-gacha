@@ -235,7 +235,8 @@ function getDefaultState() {
     tenPullSummons: 0,
     unlockedAchievements: [],
     pullsSinceLastExport: 0,
-    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true }
+    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true }, lang: 'auto'
+
   };
 }
 
@@ -2090,20 +2091,20 @@ function renderCalendar() {
       }
     }
 
-    dayCard.className = `p-2.5 rounded-2xl border flex flex-col items-center justify-between text-center min-h-[78px] transition ${cardStyle}`;
+        dayCard.className = `p-1.5 sm:p-2 rounded-2xl border flex flex-col items-center justify-between text-center min-h-[82px] sm:min-h-[88px] transition ${cardStyle}`;
     
     let statusHtml = '';
     if (isClaimed) {
       statusHtml = '<span class="text-[9px] font-bold text-emerald-400">✓ Done</span>';
     } else if (isPastOrToday) {
-      statusHtml = `<button onclick="claimSingleDay(${day})" class="mt-1 text-[9px] font-bold px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg active:scale-95 transition">Claim</button>`;
+      statusHtml = `<button onclick="claimSingleDay(${day})" class="mt-1 text-[9px] font-black px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg active:scale-95 transition shadow whitespace-nowrap">Claim</button>`;
     } else {
       statusHtml = '<span class="text-[9px] text-slate-500">🔒</span>';
     }
 
     dayCard.innerHTML = `
-      <div class="text-[10px] font-bold ${isToday ? 'text-amber-400 font-extrabold' : 'text-slate-400'}">Day ${day}</div>
-      <div class="text-[11px] font-mono font-bold text-amber-300">+${reward.toLocaleString()}💎</div>
+      <div class="text-[10px] sm:text-xs font-bold ${isToday ? 'text-amber-400 font-extrabold' : 'text-slate-400'} whitespace-nowrap">Day ${day}</div>
+      <div class="text-[10px] sm:text-[11px] font-mono font-bold text-amber-300 whitespace-nowrap">+${reward.toLocaleString()}💎</div>
       ${statusHtml}
     `;
 
@@ -2368,6 +2369,46 @@ function renderUI() {
   renderInventory();
 }
 
+// --- BILINGUAL SYSTEM ---
+function getActiveLang() {
+  if (state.lang === 'en') return 'en';
+  const nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+  return nav.startsWith('th') ? 'th' : 'en';
+}
+
+function setLanguage(lang) {
+  state.lang = lang;
+  saveState();
+  applyLanguage();
+}
+
+function t(key) {
+  const l = getActiveLang();
+  return (UI_TRANSLATIONS[l] && UI_TRANSLATIONS[l][key]) || (UI_TRANSLATIONS['en'] && UI_TRANSLATIONS['en'][key]) || key;
+}
+
+function applyLanguage() {
+  const isEn = (state.lang === 'en');
+  const btnAuto = document.getElementById('langBtn_auto');
+  const btnEn = document.getElementById('langBtn_en');
+  if (btnAuto && btnEn) {
+    btnAuto.className = !isEn
+      ? 'py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex items-center justify-center gap-1.5'
+      : 'py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5';
+    btnEn.className = isEn
+      ? 'py-2 rounded-xl border border-indigo-500 bg-indigo-600/30 text-indigo-300 transition flex items-center justify-center gap-1.5'
+      : 'py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white transition flex items-center justify-center gap-1.5';
+  }
+
+  const colTitle = document.getElementById('txt_col_title');
+  if (colTitle) colTitle.innerText = t('collection_title');
+  const colHint = document.getElementById('txt_col_hint');
+  if (colHint) colHint.innerText = t('collection_hint');
+  const sAll = document.getElementById('seriesBtn_ALL');
+  if (sAll) sAll.innerText = t('filter_all_sets');
+}
+
 // --- BOOTSTRAP INITIALIZATION ---
 loadState();
+applyLanguage();
 resetAfkTimer();
