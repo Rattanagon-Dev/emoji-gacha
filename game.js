@@ -365,6 +365,14 @@ function renderPickupModal() {
   }).join('');
 }
 
+function switchBanner(id) {
+  if (!BANNER_POOLS[id]) return;
+  state.currentBannerId = id;
+  bannerEmojiIndex = 0;
+  renderBannerUI();
+  saveState();
+}
+
 function renderBannerUI() {
   const banner = BANNERS.find(b => b.id === state.currentBannerId) || BANNERS[0];
   const titleEl = document.getElementById('bannerTitle');
@@ -387,29 +395,6 @@ function renderBannerUI() {
       displayEl.innerHTML = `<span class="text-base mr-1">${focused}</span> ${found ? found.name : ''} (2x rate)`;
     } else {
       displayEl.innerText = 'None (Standard Rates)';
-    }
-  }
-}
-
-  document.querySelectorAll('.bannerTabBtn').forEach(btn => {
-    const isActive = btn.dataset.bannerId === state.currentBannerId;
-    btn.className = 'bannerTabBtn text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 ' +
-      (isActive ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white');
-  });
-
-  const focusRow = document.getElementById('focusTargetRow');
-  if (focusRow) {
-    const activePool = BANNER_POOLS[state.currentBannerId];
-    const focused = state.focusTargets[state.currentBannerId];
-    focusRow.innerHTML = activePool.UR.map(item => {
-      const isSel = focused === item.emoji;
-      return `<button onclick="toggleFocusTarget('${item.emoji}')" title="${item.name}" class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition active:scale-95 ${isSel ? 'bg-amber-500/25 border-amber-400 shadow shadow-amber-500/30' : 'bg-slate-800/70 border-slate-700 hover:border-slate-500'}">${item.emoji}</button>`;
-    }).join('');
-    const focusLabel = document.getElementById('focusTargetLabel');
-    if (focusLabel) {
-      focusLabel.innerText = focused
-        ? `🎯 Pick-up: ${activePool.UR.find(i => i.emoji === focused)?.name || ''} (2x rate)`
-        : '🎯 Pick-up Target — tap a UR to double its rate';
     }
   }
 }
