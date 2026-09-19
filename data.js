@@ -1,14 +1,21 @@
 // --- OFFICIAL UNICODE NAMES & EXPANDED POOLS ---
+// --- SECRET RARE (SCR) UNIVERSAL SYSTEM RELICS ---
+const SCR_POOL = [
+  { emoji: '💠', name: 'Diamond with a Dot' },
+  { emoji: '🏔️', name: 'Snow-Capped Mountain' },
+  { emoji: '💻', name: 'Laptop Computer' },
+  { emoji: '⚙️', name: 'Gear System' },
+  { emoji: '👁️‍🗨️', name: 'Eye in Speech Bubble' },
+  { emoji: '⏳', name: 'Hourglass Done' }
+];
+
 const POOL = {
   UR: [
-    { emoji: '💠', name: 'Diamond with a Dot' },
     { emoji: '👑', name: 'Crown' },
     { emoji: '🌌', name: 'Milky Way' },
     { emoji: '🪐', name: 'Ringed Planet' },
     { emoji: '🦄', name: 'Unicorn' },
     { emoji: '🕊️', name: 'Dove' },
-    { emoji: '⏳', name: 'Hourglass Done' },
-    { emoji: '👁️‍🗨️', name: 'Eye in Speech Bubble' },
     { emoji: '🛸', name: 'Flying Saucer' },
     { emoji: '🪽', name: 'Wing' },
     { emoji: '⛩️', name: 'Shinto Shrine' },
@@ -247,26 +254,38 @@ const STAR_REQUIREMENTS = {
   6: 90, 7: 120, 8: 150, 9: 200, 10: 300
 };
 
-const DUPLICATE_SHARDS = { 'UR': 35, 'SSR': 20, 'SR': 10, 'R': 5 };
+const DUPLICATE_SHARDS = { 'SCR': 50, 'UR': 35, 'SSR': 20, 'SR': 10, 'R': 5 };
 
 const PROMO_CODES = {
+  '681210656': 'DEV_TOOL_ACTIVATED',
   'INFLATION': 100000,
   'LUCKY777': 77777,
   'JAIMINI': 50000,
   'WELCOME': 25000,
   'EMOJIGACHA': 15000,
-  'BENDEV': 999999,        // 👈 โค้ดลับผู้พัฒนา แจกเกือบล้านเพชร!
-  'SECRETGEMS': 30000,      // 👈 โค้ดลับแจกเพชร
-  'XFOLLOWER': 50000        // 👈 เอาไว้แจกคนตามใน X (@NarueponKub)
+  'BENDEV': 999999,
+  'SECRETGEMS': 30000,
+  'XFOLLOWER': 50000
 };
+
+// --- AVATAR PROFILES & FRAMES ---
+const AVATAR_FRAMES = [
+  { id: 'default', name: 'Default Slate', class: 'avatar-frame-default', req: 'Basic starter frame' },
+  { id: 'gold', name: 'Golden Aura', class: 'avatar-frame-gold', req: 'Own 10 unique SSR emojis' },
+  { id: 'prismatic', name: 'Prismatic Neon', class: 'avatar-frame-prismatic', req: 'Own 5 unique UR emojis' },
+  { id: 'abyssal', name: 'Abyssal Glitch', class: 'avatar-frame-abyssal', req: 'Discover any SCR relic' }
+];
 
 const ACHIEVEMENTS = [
   { id: 'first_pull', icon: '🎉', name: 'First Steps', desc: 'Complete your first summon.', check: s => s.totalPulls >= 1 },
   { id: 'first_ur', icon: '🌟', name: 'First UR!', desc: 'Obtain your first UR item.', check: s => Object.values(s.inventory).some(i => i.tier === 'UR') },
+  { id: 'first_scr', icon: '🌌', name: 'Cosmic Singularity', desc: 'Discover your first Secret Rare (SCR) relic.', check: s => s.hasUnlockedScr || Object.values(s.inventory).some(i => i.tier === 'SCR') },
+  { id: 'custom_identity', icon: '🏷️', name: 'Identity Established', desc: 'Set a custom Summoner username.', check: s => s.username && s.username !== 'Summoner' },
   { id: 'collector_10', icon: '🎒', name: 'Collector I', desc: 'Own 10 unique emojis.', check: s => Object.keys(s.inventory).length >= 10 },
   { id: 'collector_30', icon: '📦', name: 'Collector II', desc: 'Own 30 unique emojis.', check: s => Object.keys(s.inventory).length >= 30 },
   { id: 'collector_60', icon: '🏛️', name: 'Collector III', desc: 'Own 60 unique emojis.', check: s => Object.keys(s.inventory).length >= 60 },
   { id: 'ur_hoarder', icon: '👑', name: 'UR Hoarder', desc: 'Own 5 unique UR items.', check: s => Object.values(s.inventory).filter(i => i.tier === 'UR').length >= 5 },
+  { id: 'rainbow_master', icon: '🌈', name: 'Dimension Master', desc: 'Ascend any emoji to Rainbow Star.', check: s => Object.values(s.inventory).some(i => i.isRainbow) },
   { id: 'high_roller', icon: '🎰', name: 'High Roller', desc: 'Perform a 10x Summon, ten times.', check: s => (s.tenPullSummons || 0) >= 10 },
   { id: 'dedicated', icon: '🔥', name: 'Dedicated Summoner', desc: 'Reach 500 total pulls.', check: s => s.totalPulls >= 500 }
 ];
@@ -304,7 +323,10 @@ const UI_TRANSLATIONS = {
     filter_all_sets: 'ทุกเซ็ต',
     out_of_gems_title: 'เพชรไม่เพียงพอ!',
     out_of_gems_desc: 'เพชรไม่พอสำหรับการสุ่มครั้งนี้ ทำภารกิจรายวัน ขุดแร่ หรือจับเพชรตกในโหมดพักจอเพื่อรับเพชรเพิ่มนะ',
-    out_of_gems_btn: '📜 ไปที่ภารกิจ'
+    out_of_gems_btn: '📜 ไปที่ภารกิจ',
+    avatar_modal_title: 'ตั้งค่าโปรไฟล์ & มาสคอต',
+    avatar_username_label: 'ชื่อผู้เล่น (Username)',
+    avatar_frame_label: 'กรอบรูปโปรไฟล์'
   },
   en: {
     nav_share: 'Share',
@@ -337,6 +359,9 @@ const UI_TRANSLATIONS = {
     filter_all_sets: 'All Sets',
     out_of_gems_title: 'Not Enough Gems!',
     out_of_gems_desc: "You don't have enough gems for this summon. Complete daily quests, mine crystals, or catch falling gems in Screensaver mode to earn more.",
-    out_of_gems_btn: '📜 Go to Quests'
+    out_of_gems_btn: '📜 Go to Quests',
+    avatar_modal_title: 'Profile & Mascot Studio',
+    avatar_username_label: 'Summoner Username',
+    avatar_frame_label: 'Avatar Profile Frame'
   }
 };
