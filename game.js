@@ -1158,7 +1158,7 @@ function getSinglePull(is10thGuaranteed = false) {
   const isPityScr = (state.scrPity >= 1000);
   const isPityUr = (state.urPity >= 100);
 
-  // Dev Tool Forced Tier Override
+    // Dev Tool Forced Tier Override
   if (devForcedNextTier) {
     tier = devForcedNextTier;
     devForcedNextTier = null;
@@ -1166,27 +1166,31 @@ function getSinglePull(is10thGuaranteed = false) {
   // 1. Secret Rare (SCR): 0.02% base chance or 1,000 Pity
   else if (isPityScr || Math.random() < 0.0002) {
     tier = 'SCR';
-    state.scrPity = 0;
-    state.urPity = 0;
-    state.ssrPity = 0;
-    state.hasUnlockedScr = true;
   }
   // 2. Ultra Rare (UR): 0.80% base chance or 100 Pity
   else if (isPityUr || Math.random() < 0.008) {
     tier = 'UR';
     state.urPity = 0;
     state.ssrPity = 0;
-  }
+  } 
   // 3. Super Special Rare (SSR): 3.20% base chance or 40 Pity
   else if (state.ssrPity >= 40 || Math.random() < 0.032) {
     tier = 'SSR';
     state.ssrPity = 0;
-  }
+  } 
   // 4. Special Rare (SR): 32% base chance or 10-pull guarantee
   else if (is10thGuaranteed || Math.random() < 0.32) {
     tier = 'SR';
   } else {
     tier = 'R';
+  }
+
+  // Automatic SCR Unlocking and Pity Reset
+  if (tier === 'SCR') {
+    state.hasUnlockedScr = true;
+    state.scrPity = 0;
+    state.urPity = 0;
+    state.ssrPity = 0;
   }
 
   // Pool Selection & Focus Targets
@@ -1297,11 +1301,10 @@ function startSummon(times) {
 
   currentSessionPulls = [];
   for (let i = 0; i < times; i++) {
-    const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR'));
+    const isGuaranteed = (times === 10 && i === 9 && !currentSessionPulls.some(p => p.tier === 'SR' || p.tier === 'SSR' || p.tier === 'UR' || p.tier === 'SCR'));
     currentSessionPulls.push(getSinglePull(isGuaranteed));
   }
 
-  // บันทึกเซสชันการสุ่มรอบนี้ลง Pull Log แบบชุด
   if (!state.pullSessions) state.pullSessions = [];
   state.pullSessions.unshift({
     id: Date.now(),
@@ -1314,18 +1317,19 @@ function startSummon(times) {
 
   saveState();
 
+  const hasApparentScr = currentSessionPulls.some(p => p.tier === 'SCR');
   const hasApparentUr = currentSessionPulls.some(p => p.tier === 'UR' && !p.isFakeout);
   const hasApparentSsr = currentSessionPulls.some(p => p.tier === 'SSR');
   const hasApparentSr = currentSessionPulls.some(p => p.tier === 'SR' || (p.tier === 'UR' && p.isFakeout && p.disguiseTier === 'SR'));
 
   if (laptopIntroEnabled) {
-    playLaptopIntro(hasApparentUr, hasApparentSsr, hasApparentSr);
+    playLaptopIntro(hasApparentScr, hasApparentUr, hasApparentSsr, hasApparentSr);
   } else {
     proceedToReveal();
   }
 }
 
-function playLaptopIntro(hasUr, hasSsr, hasSr) {
+function playLaptopIntro(hasScr, hasUr, hasSsr, hasSr) {
   const stage = document.getElementById('laptopStage');
   const container = document.getElementById('laptopContainer');
   const bloom = document.getElementById('laptopRadialBloom');
@@ -1335,7 +1339,12 @@ function playLaptopIntro(hasUr, hasSsr, hasSr) {
   bloom.style.opacity = '0';
   container.className = 'relative flex items-center justify-center laptop-smooth-zoom';
 
-  if (hasUr) {
+  if (hasScr) {
+    msg.innerText = '🌌 CRITICAL ANOMALY: DIMENSION COLLAPSING... 🌌';
+    msg.className = 'mt-12 font-mono tracking-widest text-xs uppercase text-rose-300 font-black animate-pulse relative z-20';
+    bloom.style.background = 'radial-gradient(circle, rgba(244, 63, 94, 1) 0%, rgba(147, 51, 234, 0.8) 35%, rgba(6, 182, 212, 0.5) 65%, transparent 75%)';
+    playSound('ur_laptop');
+  } else if (hasUr) {
     msg.innerText = '⚠️ COSMIC MATRIX WARPING... ⚠️';
     msg.className = 'mt-12 font-mono tracking-widest text-xs uppercase text-pink-300 font-black animate-pulse relative z-20';
     bloom.style.background = 'radial-gradient(circle, rgba(244, 114, 182, 0.95) 0%, rgba(168, 85, 247, 0.75) 30%, rgba(56, 189, 248, 0.4) 55%, transparent 72%)';
@@ -1468,7 +1477,7 @@ function displayCurrentCard() {
     badgeEl.innerText = 'SECRET RARE';
     badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full bg-rose-500/30 text-rose-300 border border-rose-400/70 shadow-lg';
     if (!state.skipScrCutscenes) {
-      triggerScrCutscene(item);
+      triggerScrTerminalAndCutscene(item);
     } else {
       playSound('ur');
     }
@@ -1476,8 +1485,6 @@ function displayCurrentCard() {
     card.className = 'card-float-slam relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-ur';
     badgeEl.innerText = 'UR COSMIC';
     badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full bg-pink-500/30 text-pink-300 border border-pink-400/60';
-    
-    // Skip duplicate UR typing if setting enabled
     if (state.skipDuplicateUr && !item.isNew) {
       playSound('ur');
     } else {
@@ -1501,6 +1508,30 @@ function displayCurrentCard() {
   }
 }
 
+function onRevealScreenTapped(e) {
+  if (e.target.closest('button')) return;
+
+  const item = currentSessionPulls[currentRevealIndex];
+  if (item && item.isFakeout) {
+    item.fakeoutClicks++;
+    if (item.fakeoutClicks < 3) {
+      playSound('pop');
+      displayCurrentCard();
+      return;
+    } else {
+      item.isFakeout = false;
+      playSound('glass_shatter');
+      document.getElementById('appBody').classList.add('shake-screen');
+      setTimeout(() => document.getElementById('appBody').classList.remove('shake-screen'), 450);
+      displayCurrentCard();
+      return;
+    }
+  }
+
+  currentRevealIndex++;
+  displayCurrentCard();
+}
+
 function skipAllReveals() {
   const remainingPulls = currentSessionPulls.slice(currentRevealIndex);
   const remainingScrs = remainingPulls.filter(p => p.tier === 'SCR');
@@ -1519,17 +1550,43 @@ function skipAllReveals() {
   }
 }
 
-// --- SCR DIMENSION SHATTER CUTSCENE ENGINE ---
-function triggerScrCutscene(item) {
-  const stage = document.getElementById('scrCutsceneStage');
-  document.getElementById('scrCutsceneEmoji').innerText = item.emoji;
-  document.getElementById('scrCutsceneName').innerText = item.name;
+// --- DRAMATIC SCR TERMINAL & DIMENSIONAL CUTSCENE ---
+function triggerScrTerminalAndCutscene(item) {
+  const term = document.getElementById('scrTerminalStage');
+  const textEl = document.getElementById('scrTypingText');
+  const preview = document.getElementById('scrImpactEmojiPreview');
 
-  stage.classList.remove('hidden');
-  stage.classList.add('dimension-shatter');
-  setTimeout(() => stage.classList.remove('dimension-shatter'), 750);
+  term.classList.remove('hidden');
+  textEl.innerText = '';
+  preview.innerText = '';
+  preview.style.opacity = '0';
+  preview.style.transform = 'scale(0.5)';
 
   playSound('ur_laptop');
+
+  const phrase = "BREACHING PARALLEL REALM . . . ";
+  let idx = 0;
+
+  const timer = setInterval(() => {
+    if (idx < phrase.length) {
+      textEl.innerText += phrase[idx];
+      playSound('typing');
+      idx++;
+    } else {
+      clearInterval(timer);
+      setTimeout(() => {
+        preview.innerText = item.emoji;
+        preview.style.opacity = '1';
+        preview.style.transform = 'scale(1.4)';
+        playSound('ur');
+
+        setTimeout(() => {
+          term.classList.add('hidden');
+          showScrCutsceneDirect(item);
+        }, 800);
+      }, 500);
+    }
+  }, 60);
 }
 
 function triggerNextScrCutscene() {
@@ -1538,14 +1595,26 @@ function triggerNextScrCutscene() {
     return;
   }
   const item = pendingScrCutscenes.shift();
-  triggerScrCutscene(item);
+  triggerScrTerminalAndCutscene(item);
+}
+
+function showScrCutsceneDirect(item) {
+  const stage = document.getElementById('scrCutsceneStage');
+  document.getElementById('scrCutsceneEmoji').innerText = item.emoji;
+  document.getElementById('scrCutsceneName').innerText = item.name;
+
+  stage.classList.remove('hidden');
+  stage.classList.add('dimension-shatter');
+  setTimeout(() => stage.classList.remove('dimension-shatter'), 750);
+
+  playSound('ur');
 }
 
 function dismissScrCutscene() {
   document.getElementById('scrCutsceneStage').classList.add('hidden');
   if (pendingScrCutscenes.length > 0) {
     triggerNextScrCutscene();
-  } else {
+  } else if (fastModeEnabled || currentRevealIndex >= currentSessionPulls.length - 1) {
     showSummaryModal();
   }
 }
@@ -1693,7 +1762,9 @@ function renderCodex() {
   grid.innerHTML = '';
 
   const allEntries = [];
-  // นำเข้าทั้งตู้ Cosmos และ Feelings Parade พร้อมแท็ก Series
+  if (state.hasUnlockedScr) {
+    SCR_POOL.forEach(item => allEntries.push({ ...item, tier: 'SCR', series: 'scr' }));
+  }
   Object.keys(POOL).forEach(tier => {
     POOL[tier].forEach(item => allEntries.push({ ...item, tier, series: 'cosmos' }));
   });
@@ -1721,7 +1792,8 @@ function renderCodex() {
 
     if (isDiscovered) {
       let borderStyle = 'border-slate-700 bg-slate-800/80';
-      if (entry.tier === 'UR') borderStyle = 'glow-ur border-pink-400/60';
+      if (entry.tier === 'SCR') borderStyle = 'glow-scr border-rose-400/80';
+      else if (entry.tier === 'UR') borderStyle = 'glow-ur border-pink-400/60';
       else if (entry.tier === 'SSR') borderStyle = 'glow-ssr border-amber-400/60';
       else if (entry.tier === 'SR') borderStyle = 'glow-sr border-purple-400/50';
 
@@ -1730,7 +1802,7 @@ function renderCodex() {
       card.innerHTML = `
         <div class="text-3xl mb-1">${entry.emoji}</div>
         <div class="text-[10px] font-bold text-white truncate w-full">${entry.name}</div>
-        <div class="mt-1">${getStarsHtml(itemData.stars, itemData.isRainbow)}</div>
+        <div class="mt-1">${getStarsHtml(itemData.stars, itemData.isRainbow, itemData.tier)}</div>
       `;
     } else {
       card.className = 'p-2.5 rounded-2xl border border-slate-800 bg-slate-950/60 flex flex-col items-center justify-center text-center opacity-40';
@@ -2578,12 +2650,15 @@ function renderInventory() {
     return;
   }
 
-  const tierWeight = { 'UR': 4, 'SSR': 3, 'SR': 2, 'R': 1 };
+  // SCR gets highest priority (weight 5)
+  const tierWeight = { 'SCR': 5, 'UR': 4, 'SSR': 3, 'SR': 2, 'R': 1 };
   filtered.sort((a, b) => {
     const pinA = a[1].isPinned ? 1 : 0;
     const pinB = b[1].isPinned ? 1 : 0;
     if (pinA !== pinB) return pinB - pinA;
-    if (tierWeight[b[1].tier] !== tierWeight[a[1].tier]) return tierWeight[b[1].tier] - tierWeight[a[1].tier];
+    if ((tierWeight[b[1].tier] || 0) !== (tierWeight[a[1].tier] || 0)) {
+      return (tierWeight[b[1].tier] || 0) - (tierWeight[a[1].tier] || 0);
+    }
     if (b[1].isRainbow !== a[1].isRainbow) return b[1].isRainbow ? 1 : -1;
     return b[1].stars - a[1].stars;
   });
@@ -2593,18 +2668,22 @@ function renderInventory() {
     let borderClass = 'border-slate-800 bg-slate-800/40 text-slate-400';
     let tierTagClass = 'bg-slate-800 text-slate-400';
 
-    if (data.tier === 'UR') {
+    if (data.tier === 'SCR') {
+      borderClass = 'glow-scr text-rose-200';
+      tierTagClass = 'bg-rose-500/30 text-rose-300 font-black';
+    } else if (data.tier === 'UR') {
       borderClass = 'glow-ur text-pink-300';
-      tierTagClass = 'bg-pink-500/30 text-pink-300';
+      tierTagClass = 'bg-pink-500/30 text-pink-300 font-bold';
     } else if (data.tier === 'SSR') {
       borderClass = 'glow-ssr text-amber-300';
-      tierTagClass = 'bg-amber-500/30 text-amber-300';
+      tierTagClass = 'bg-amber-500/30 text-amber-300 font-bold';
     } else if (data.tier === 'SR') {
       borderClass = 'glow-sr text-purple-300';
-      tierTagClass = 'bg-purple-500/30 text-purple-300';
+      tierTagClass = 'bg-purple-500/30 text-purple-300 font-bold';
     }
 
-    const needed = STAR_REQUIREMENTS[data.stars] || 10;
+    const isScr = (data.tier === 'SCR');
+    const needed = isScr ? (STAR_REQUIREMENTS[data.stars] || 20) : (STAR_REQUIREMENTS[data.stars] || 10);
     const canPromote = !data.isRainbow && data.shards >= needed;
 
     card.onclick = () => openEmojiModal(emoji);
@@ -2613,7 +2692,7 @@ function renderInventory() {
       ${data.isPinned ? '<span class="absolute top-1.5 right-1.5 text-xs drop-shadow">📌</span>' : ''}
       <div class="text-3xl mb-1">${emoji}</div>
       <div class="text-[10px] font-bold truncate max-w-full text-center">${data.name}</div>
-      <div class="mt-1">${getStarsHtml(data.stars, data.isRainbow)}</div>
+      <div class="mt-1">${getStarsHtml(data.stars, data.isRainbow, data.tier)}</div>
       <div class="text-[8px] font-mono text-slate-400 mt-0.5">${data.isRainbow ? '🌈 Max' : `${data.shards}/${needed} Shards`}</div>
       ${canPromote ? '<span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-slate-900 animate-ping"></span><span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-slate-900"></span>' : ''}
       <span class="absolute top-1.5 left-1.5 text-[8px] font-black px-1.5 py-0.2 rounded ${tierTagClass}">${data.tier}</span>
@@ -2624,6 +2703,13 @@ function renderInventory() {
   updatePromoteAllBtnUI();
 }
 
+function renderUI() {
+  document.getElementById('gemCount').innerText = state.gems.toLocaleString();
+  document.getElementById('urPityCount').innerText = state.urPity;
+  document.getElementById('ssrPityCount').innerText = state.ssrPity;
+  document.getElementById('totalPullsCount').innerText = state.totalPulls;
+  document.getElementById('mascotIconBtn').innerText = state.mascot || '✨';
+
   // Update Username and Mascot Avatar Frame in Header
   const unameEl = document.getElementById('headerUsername');
   if (unameEl) unameEl.innerText = state.username || 'Summoner';
@@ -2633,26 +2719,34 @@ function renderInventory() {
     frameEl.className = `w-10 h-10 rounded-2xl flex items-center justify-center avatar-frame-${state.avatarFrame || 'default'} bg-slate-900 shadow-md cursor-pointer transition active:scale-95`;
   }
 
-  // Show / Hide SCR Pity Box
+  // Reveal SCR Elements when unlocked
+  const hasScr = !!state.hasUnlockedScr;
   const scrPityBox = document.getElementById('scrPityBox');
   if (scrPityBox) {
-    scrPityBox.classList.toggle('hidden', !state.hasUnlockedScr);
+    scrPityBox.classList.toggle('hidden', !hasScr);
     const scrPityCount = document.getElementById('scrPityCount');
     if (scrPityCount) scrPityCount.innerText = state.scrPity || 0;
   }
 
-  // Show / Hide SCR Setting in Settings
   const skipScrSettingWrapper = document.getElementById('skipScrSettingWrapper');
   if (skipScrSettingWrapper) {
-    skipScrSettingWrapper.classList.toggle('hidden', !state.hasUnlockedScr);
+    skipScrSettingWrapper.classList.toggle('hidden', !hasScr);
   }
 
-function renderUI() {
-  document.getElementById('gemCount').innerText = state.gems.toLocaleString();
-  document.getElementById('urPityCount').innerText = state.urPity;
-  document.getElementById('ssrPityCount').innerText = state.ssrPity;
-  document.getElementById('totalPullsCount').innerText = state.totalPulls;
-  document.getElementById('mascotIconBtn').innerText = state.mascot || '✨';
+  const filterBtnSCR = document.getElementById('filterBtnSCR');
+  if (filterBtnSCR) filterBtnSCR.classList.toggle('hidden', !hasScr);
+
+  const codexTab_SCR = document.getElementById('codexTab_SCR');
+  if (codexTab_SCR) codexTab_SCR.classList.toggle('hidden', !hasScr);
+
+  const ratesRow_SCR = document.getElementById('ratesRow_SCR');
+  if (ratesRow_SCR) ratesRow_SCR.classList.toggle('hidden', !hasScr);
+
+  const pickupTab_SCR = document.getElementById('pickupTab_SCR');
+  if (pickupTab_SCR) pickupTab_SCR.classList.toggle('hidden', !hasScr);
+
+  const mascotTab_SCR = document.getElementById('mascotTab_SCR');
+  if (mascotTab_SCR) mascotTab_SCR.classList.toggle('hidden', !hasScr);
 
   const headerShareBtn = document.getElementById('headerShareBtn');
   if (headerShareBtn) headerShareBtn.classList.toggle('hidden', state.showShareBtn === false);
