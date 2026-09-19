@@ -183,13 +183,14 @@
               <button onclick="setSeriesFilter('cosmos')" id="seriesBtn_cosmos" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white transition">Cosmos</button>
               <button onclick="setSeriesFilter('faces')" id="seriesBtn_faces" class="px-2 py-1 rounded-lg text-slate-400 hover:text-white transition">Faces</button>
             </div>
-            <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs font-bold">
-              <button onclick="setFilter('ALL')" id="filterBtnALL" class="px-2 py-1 rounded-lg bg-indigo-600 text-white transition">ALL</button>
-              <button onclick="setFilter('UR')" id="filterBtnUR" class="px-2 py-1 rounded-lg text-pink-400 hover:bg-slate-700 transition">UR</button>
-              <button onclick="setFilter('SSR')" id="filterBtnSSR" class="px-2 py-1 rounded-lg text-amber-400 hover:bg-slate-700 transition">SSR</button>
-              <button onclick="setFilter('SR')" id="filterBtnSR" class="px-2 py-1 rounded-lg text-purple-400 hover:bg-slate-700 transition">SR</button>
-              <button onclick="setFilter('R')" id="filterBtnR" class="px-2 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition">R</button>
-            </div>
+            <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs font-bold">
+              <button onclick="setFilter('ALL')" id="filterBtnALL" class="px-2 py-1 rounded-lg bg-indigo-600 text-white transition">ALL</button>
+              <button onclick="setFilter('SCR')" id="filterBtnSCR" class="hidden px-2 py-1 rounded-lg text-rose-400 hover:bg-slate-700 transition">SCR</button>
+              <button onclick="setFilter('UR')" id="filterBtnUR" class="px-2 py-1 rounded-lg text-pink-400 hover:bg-slate-700 transition">UR</button>
+              <button onclick="setFilter('SSR')" id="filterBtnSSR" class="px-2 py-1 rounded-lg text-amber-400 hover:bg-slate-700 transition">SSR</button>
+              <button onclick="setFilter('SR')" id="filterBtnSR" class="px-2 py-1 rounded-lg text-purple-400 hover:bg-slate-700 transition">SR</button>
+              <button onclick="setFilter('R')" id="filterBtnR" class="px-2 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition">R</button>
+            </div>
           </div>
         </div>
         <div id="inventoryGrid" class="grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-96 overflow-y-auto pr-1"></div>
@@ -473,13 +474,14 @@
           <button onclick="setCodexSeriesFilter('cosmos')" id="codexSeries_cosmos" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">Cosmos</button>
           <button onclick="setCodexSeriesFilter('faces')" id="codexSeries_faces" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">Faces</button>
         </div>
-        <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs font-bold">
-          <button onclick="setCodexFilter('ALL')" id="codexTab_ALL" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition">ALL</button>
-          <button onclick="setCodexFilter('UR')" id="codexTab_UR" class="px-2.5 py-1 rounded-lg text-pink-400 hover:bg-slate-700 transition">UR</button>
-          <button onclick="setCodexFilter('SSR')" id="codexTab_SSR" class="px-2.5 py-1 rounded-lg text-amber-400 hover:bg-slate-700 transition">SSR</button>
-          <button onclick="setCodexFilter('SR')" id="codexTab_SR" class="px-2.5 py-1 rounded-lg text-purple-400 hover:bg-slate-700 transition">SR</button>
-          <button onclick="setCodexFilter('R')" id="codexTab_R" class="px-2.5 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition">R</button>
-        </div>
+        <div class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs font-bold">
+          <button onclick="setCodexFilter('ALL')" id="codexTab_ALL" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition">ALL</button>
+          <button onclick="setCodexFilter('SCR')" id="codexTab_SCR" class="hidden px-2.5 py-1 rounded-lg text-rose-400 hover:bg-slate-700 transition">SCR</button>
+          <button onclick="setCodexFilter('UR')" id="codexTab_UR" class="px-2.5 py-1 rounded-lg text-pink-400 hover:bg-slate-700 transition">UR</button>
+          <button onclick="setCodexFilter('SSR')" id="codexTab_SSR" class="px-2.5 py-1 rounded-lg text-amber-400 hover:bg-slate-700 transition">SSR</button>
+          <button onclick="setCodexFilter('SR')" id="codexTab_SR" class="px-2.5 py-1 rounded-lg text-purple-400 hover:bg-slate-700 transition">SR</button>
+          <button onclick="setCodexFilter('R')" id="codexTab_R" class="px-2.5 py-1 rounded-lg text-slate-400 hover:bg-slate-700 transition">R</button>
+        </div>
       </div>
 
       <div id="codexGrid" class="grid grid-cols-3 sm:grid-cols-5 gap-2.5 overflow-y-auto pr-1 flex-1"></div>
@@ -567,14 +569,18 @@
         </div>
 
         <div class="space-y-2">
-          <div class="flex justify-between font-bold text-amber-300 pb-1 border-b border-slate-800">
-            <span>Tier</span>
-            <span>Base Probability</span>
-          </div>
-          <div class="flex justify-between text-pink-400 font-bold">
-            <span>UR (Ultra Rare - Prismatic)</span>
-            <span>0.80%</span>
-          </div>
+          <div class="flex justify-between font-bold text-amber-300 pb-1 border-b border-slate-800">
+            <span>Tier</span>
+            <span>Base Probability</span>
+          </div>
+          <div id="ratesRow_SCR" class="hidden justify-between text-rose-400 font-black animate-pulse">
+            <span>SCR (Secret Rare - Universal Relic)</span>
+            <span>0.02% (Pity: 1000)</span>
+          </div>
+          <div class="flex justify-between text-pink-400 font-bold">
+            <span>UR (Ultra Rare - Prismatic)</span>
+            <span>0.80%</span>
+          </div>
           <div class="flex justify-between text-amber-400 font-bold">
             <span>SSR (Super Special Rare - Gold)</span>
             <span>3.20%</span>
@@ -1121,6 +1127,18 @@
   </div>
 
       <!-- ================= SCR DIMENSION SHATTER CUTSCENE ================= -->
+        <!-- ================= SCR TERMINAL GLITCH STAGE ================= -->
+  <div id="scrTerminalStage" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center hidden select-none p-6">
+    <div class="text-center space-y-4 max-w-md">
+      <div class="text-xs font-mono text-rose-400 tracking-[0.3em] uppercase animate-pulse">✦ REALM FRACTURE IN PROGRESS ✦</div>
+      <div class="text-2xl sm:text-4xl font-mono font-black text-rose-300 tracking-wider flex items-center justify-center min-h-[3rem]">
+        <span id="scrTypingText" class="whitespace-pre"></span>
+        <span class="animate-pulse text-cyan-300 font-normal ml-1">_</span>
+      </div>
+      <div id="scrImpactEmojiPreview" class="text-8xl pt-4 opacity-0 transition-opacity duration-300 transform scale-50"></div>
+    </div>
+  </div>
+
   <div id="scrCutsceneStage" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center hidden overflow-hidden select-none" onclick="dismissScrCutscene()">
     <div class="god-rays opacity-90"></div>
     <div class="absolute inset-0 bg-radial from-rose-600/30 via-purple-950/50 to-black pointer-events-none"></div>
