@@ -1556,6 +1556,11 @@ function triggerScrTerminalAndCutscene(item) {
   const textEl = document.getElementById('scrTypingText');
   const preview = document.getElementById('scrImpactEmojiPreview');
 
+  if (!term || !textEl || !preview) {
+    showScrCutsceneDirect(item);
+    return;
+  }
+
   term.classList.remove('hidden');
   textEl.innerText = '';
   preview.innerText = '';
@@ -1600,6 +1605,7 @@ function triggerNextScrCutscene() {
 
 function showScrCutsceneDirect(item) {
   const stage = document.getElementById('scrCutsceneStage');
+  if (!stage) return;
   document.getElementById('scrCutsceneEmoji').innerText = item.emoji;
   document.getElementById('scrCutsceneName').innerText = item.name;
 
@@ -1611,11 +1617,11 @@ function showScrCutsceneDirect(item) {
 }
 
 function dismissScrCutscene() {
-  document.getElementById('scrCutsceneStage').classList.add('hidden');
+  const stage = document.getElementById('scrCutsceneStage');
+  if (stage) stage.classList.add('hidden');
+
   if (pendingScrCutscenes.length > 0) {
     triggerNextScrCutscene();
-  } else if (fastModeEnabled || currentRevealIndex >= currentSessionPulls.length - 1) {
-    showSummaryModal();
   }
 }
 
@@ -2710,7 +2716,11 @@ function renderUI() {
   document.getElementById('totalPullsCount').innerText = state.totalPulls;
   document.getElementById('mascotIconBtn').innerText = state.mascot || '✨';
 
-  // Update Username and Mascot Avatar Frame in Header
+  // Auto-check SCR ownership from inventory
+  const hasScr = !!state.hasUnlockedScr || Object.values(state.inventory || {}).some(i => i.tier === 'SCR');
+  if (hasScr) state.hasUnlockedScr = true;
+
+  // Update Username & Mascot Avatar Frame in Header
   const unameEl = document.getElementById('headerUsername');
   if (unameEl) unameEl.innerText = state.username || 'Summoner';
 
@@ -2719,8 +2729,7 @@ function renderUI() {
     frameEl.className = `w-10 h-10 rounded-2xl flex items-center justify-center avatar-frame-${state.avatarFrame || 'default'} bg-slate-900 shadow-md cursor-pointer transition active:scale-95`;
   }
 
-  // Reveal SCR Elements when unlocked
-  const hasScr = !!state.hasUnlockedScr;
+  // Reveal All SCR Elements Across the Entire Game
   const scrPityBox = document.getElementById('scrPityBox');
   if (scrPityBox) {
     scrPityBox.classList.toggle('hidden', !hasScr);
@@ -2729,9 +2738,7 @@ function renderUI() {
   }
 
   const skipScrSettingWrapper = document.getElementById('skipScrSettingWrapper');
-  if (skipScrSettingWrapper) {
-    skipScrSettingWrapper.classList.toggle('hidden', !hasScr);
-  }
+  if (skipScrSettingWrapper) skipScrSettingWrapper.classList.toggle('hidden', !hasScr);
 
   const filterBtnSCR = document.getElementById('filterBtnSCR');
   if (filterBtnSCR) filterBtnSCR.classList.toggle('hidden', !hasScr);
