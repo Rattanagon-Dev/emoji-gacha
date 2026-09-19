@@ -424,6 +424,14 @@ function renderPickupModal() {
   }).join('');
 }
 
+function switchBanner(id) {
+  if (!BANNER_POOLS[id]) return;
+  state.currentBannerId = id;
+  bannerEmojiIndex = 0;
+  renderBannerUI();
+  saveState();
+}
+
 function renderBannerUI() {
   const banner = BANNERS.find(b => b.id === state.currentBannerId) || BANNERS[0];
   const titleEl = document.getElementById('bannerTitle');
@@ -576,7 +584,8 @@ function loadState() {
       fastModeEnabled = state.fastMode ?? false;
       laptopIntroEnabled = state.laptopIntro ?? true;
       state.currentBannerId = BANNER_POOLS[state.currentBannerId] ? state.currentBannerId : 'cosmos';
-      state.focusTargets = Object.assign({ cosmos: null, faces: null }, state.focusTargets || {});
+      state.focusTargets = Object.assign({ cosmos: null, faces: null, all: null, ssr: null, scr: null }, state.focusTargets || {});
+      state.hasUnlockedScr = !!state.hasUnlockedScr || Object.values(state.inventory || {}).some(i => i.tier === 'SCR');
       state.pullLog = Array.isArray(state.pullLog) ? state.pullLog : [];
       state.tenPullSummons = state.tenPullSummons ?? 0;
       state.unlockedAchievements = Array.isArray(state.unlockedAchievements) ? state.unlockedAchievements : [];
