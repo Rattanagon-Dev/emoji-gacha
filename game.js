@@ -195,11 +195,12 @@ function playSound(type) {
   } catch (e) {}
 }
 
-// --- GAME STATE ---
+// --- GAME STATE DEFINITION ---
 function getDefaultState() {
   const now = new Date();
   return {
     gems: 25000,
+    scrPity: 0,
     urPity: 0,
     ssrPity: 0,
     totalPulls: 0,
@@ -222,21 +223,26 @@ function getDefaultState() {
     showShareBtn: true,
     fakeoutEnabled: true,
     fastMode: false,
+    skipDuplicateUr: true,
+    skipScrCutscenes: false,
     laptopIntro: true,
     layout: 'tablet',
     mascot: '✨',
+    avatarFrame: 'default',
+    username: 'Summoner',
+    hasUnlockedScr: false,
     wpOpacity: 70,
     wpPosX: 50,
     wpPosY: 50,
     currentBannerId: 'cosmos',
-    focusTargets: { cosmos: null, faces: null, all: null },
+    focusTargets: { cosmos: null, faces: null, all: null, ssr: null, scr: null },
     pullLog: [],
     pullSessions: [],
     tenPullSummons: 0,
     unlockedAchievements: [],
     pullsSinceLastExport: 0,
-    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true }, lang: 'en'
-
+    clockConfig: { showDate: true, showTime: true, showUtc: true, showLocation: true },
+    lang: 'en'
   };
 }
 
@@ -249,6 +255,11 @@ let currentSessionPulls = [];
 let currentRevealIndex = 0;
 let selectedEmoji = null;
 let pendingUrCutscenes = [];
+let pendingScrCutscenes = [];
+let currentPickupTierTab = 'UR';
+let currentMascotFilter = 'ALL';
+let devForcedNextTier = null;
+
 
 // --- LOCAL STORAGE ---
 function saveState() {
@@ -323,8 +334,9 @@ function checkExportReminder() {
   }
 }
 
+// --- EXPANDED PICK-UP TARGET MODAL WITH SILHOUETTES ---
 function openPickupModal() {
-  renderPickupModal();
+  setPickupTierTab(currentPickupTierTab);
   document.getElementById('pickupModal').classList.remove('hidden');
 }
 
@@ -332,15 +344,46 @@ function closePickupModal() {
   document.getElementById('pickupModal').classList.add('hidden');
 }
 
+function setPickupTierTab(tier) {
+  currentPickupTierTab = tier;
+  ['UR', 'SSR', 'SCR'].forEach(t => {
+    const btn = document.getElementById(`pickupTab_${t}`);
+    if (btn) {
+      btn.className = (t === tier)
+        ? 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition'
+        : 'px-2.5 py-1 rounded-lg text-slate-400 hover:bg-slate-800 transition';
+    }
+  });
+
+  const scrTab = document.getElementById('pickupTab_SCR');
+  if (scrTab) {
+    scrTab.classList.toggle('hidden', !state.hasUnlockedScr);
+  }
+
+  renderPickupModal();
+}
+
 function selectPickupTarget(emoji) {
-  state.focusTargets[state.currentBannerId] = emoji;
+  if (currentPickupTierTab === 'UR') {
+    state.focusTargets[state.currentBannerId] = emoji;
+  } else if (currentPickupTierTab === 'SSR') {
+    state.focusTargets.ssr = emoji;
+  } else if (currentPickupTierTab === 'SCR') {
+    state.focusTargets.scr = emoji;
+  }
   saveState();
   renderBannerUI();
   closePickupModal();
 }
 
 function clearPickupTarget() {
-  state.focusTargets[state.currentBannerId] = null;
+  if (currentPickupTierTab === 'UR') {
+    state.focusTargets[state.currentBannerId] = null;
+  } else if (currentPickupTierTab === 'SSR') {
+    state.focusTargets.ssr = null;
+  } else if (currentPickupTierTab === 'SCR') {
+    state.focusTargets.scr = null;
+  }
   saveState();
   renderBannerUI();
   closePickupModal();
@@ -349,29 +392,36 @@ function clearPickupTarget() {
 function renderPickupModal() {
   const grid = document.getElementById('pickupModalGrid');
   if (!grid) return;
+
   const activePool = BANNER_POOLS[state.currentBannerId] || POOL;
-  const currentFocused = state.focusTargets[state.currentBannerId];
-  
-  grid.innerHTML = activePool.UR.map(item => {
-    const isSel = currentFocused === item.emoji;
+  let poolList = [];
+  let currentFocused = null;
+
+  if (currentPickupTierTab === 'SCR') {
+    poolList = SCR_POOL;
+    currentFocused = state.focusTargets.scr;
+  } else if (currentPickupTierTab === 'SSR') {
+    poolList = activePool.SSR;
+    currentFocused = state.focusTargets.ssr;
+  } else {
+    poolList = activePool.UR;
+    currentFocused = state.focusTargets[state.currentBannerId];
+  }
+
+  grid.innerHTML = poolList.map(item => {
+    const isOwned = !!state.inventory[item.emoji];
+    const isSel = (currentFocused === item.emoji);
+
     return `
       <button onclick="selectPickupTarget('${item.emoji}')" class="flex items-center gap-3 p-2.5 rounded-2xl border transition active:scale-95 text-left ${isSel ? 'bg-amber-500/20 border-amber-400 text-amber-200' : 'bg-slate-800 hover:bg-slate-700/80 border-slate-700 text-slate-200'}">
-        <span class="text-3xl">${item.emoji}</span>
+        <span class="text-3xl ${isOwned ? '' : 'filter grayscale brightness-50 opacity-40'}">${item.emoji}</span>
         <div class="flex-1 min-w-0">
-          <div class="text-xs font-bold truncate">${item.name}</div>
-          <div class="text-[10px] ${isSel ? 'text-amber-300 font-bold' : 'text-slate-400'}">${isSel ? '✓ Active Focus' : 'Tap to select'}</div>
+          <div class="text-xs font-bold truncate">${isOwned ? item.name : '??? (Unobtained)'}</div>
+          <div class="text-[10px] ${isSel ? 'text-amber-300 font-bold' : 'text-slate-400'}">${isSel ? '✓ Active Focus' : 'Tap to target (2x)'}</div>
         </div>
       </button>
     `;
   }).join('');
-}
-
-function switchBanner(id) {
-  if (!BANNER_POOLS[id]) return;
-  state.currentBannerId = id;
-  bannerEmojiIndex = 0;
-  renderBannerUI();
-  saveState();
 }
 
 function renderBannerUI() {
@@ -388,15 +438,26 @@ function renderBannerUI() {
   });
 
   const activePool = BANNER_POOLS[state.currentBannerId] || POOL;
-  const focused = state.focusTargets[state.currentBannerId];
+  const focusedUr = state.focusTargets[state.currentBannerId];
+  const focusedSsr = state.focusTargets.ssr;
+  const focusedScr = state.focusTargets.scr;
+
   const displayEl = document.getElementById('bannerFocusDisplay');
   if (displayEl) {
-    if (focused) {
-      const found = activePool.UR.find(i => i.emoji === focused);
-      displayEl.innerHTML = `<span class="text-base mr-1">${focused}</span> ${found ? found.name : ''} (2x rate)`;
-    } else {
-      displayEl.innerText = 'None (Standard Rates)';
+    const activeTargets = [];
+    if (focusedScr && state.hasUnlockedScr) {
+      activeTargets.push(`<span class="text-rose-400 font-bold">${focusedScr} SCR</span>`);
     }
+    if (focusedUr) {
+      activeTargets.push(`<span class="text-pink-400 font-bold">${focusedUr} UR</span>`);
+    }
+    if (focusedSsr) {
+      activeTargets.push(`<span class="text-amber-400 font-bold">${focusedSsr} SSR</span>`);
+    }
+
+    displayEl.innerHTML = activeTargets.length > 0
+      ? activeTargets.join(' · ') + ' (2x rate)'
+      : 'None (Standard Rates)';
   }
 }
 
@@ -924,47 +985,112 @@ function applyLayout(mode) {
   }
 }
 
-// --- MASCOT SELECTOR MODAL ---
+// --- PROFILE & MASCOT STUDIO ENGINE ---
 function openMascotModal() {
+  const usernameInput = document.getElementById('usernameInput');
+  if (usernameInput) usernameInput.value = state.username || 'Summoner';
+
+  renderAvatarFrames();
+  setMascotFilter(currentMascotFilter);
+
+  const scrTab = document.getElementById('mascotTab_SCR');
+  if (scrTab) scrTab.classList.toggle('hidden', !state.hasUnlockedScr);
+
+  document.getElementById('mascotModal').classList.remove('hidden');
+}
+
+function closeMascotModal() {
+  document.getElementById('mascotModal').classList.add('hidden');
+}
+
+function saveUsername() {
+  const input = document.getElementById('usernameInput');
+  const val = input.value.trim();
+  if (val) {
+    state.username = val;
+    saveState();
+    playSound('pop');
+    showToast(`✓ Username updated to: <strong>${val}</strong>`);
+  }
+}
+
+function setAvatarFrame(frameId) {
+  state.avatarFrame = frameId;
+  saveState();
+  renderAvatarFrames();
+  playSound('pop');
+}
+
+function renderAvatarFrames() {
+  const grid = document.getElementById('avatarFrameGrid');
+  if (!grid) return;
+
+  const uniqueSsr = Object.values(state.inventory).filter(i => i.tier === 'SSR').length;
+  const uniqueUr = Object.values(state.inventory).filter(i => i.tier === 'UR').length;
+  const hasScr = state.hasUnlockedScr || Object.values(state.inventory).some(i => i.tier === 'SCR');
+
+  grid.innerHTML = AVATAR_FRAMES.map(frame => {
+    let isUnlocked = true;
+    if (frame.id === 'gold' && uniqueSsr < 10) isUnlocked = false;
+    if (frame.id === 'prismatic' && uniqueUr < 5) isUnlocked = false;
+    if (frame.id === 'abyssal' && !hasScr) isUnlocked = false;
+
+    const isSelected = (state.avatarFrame || 'default') === frame.id;
+
+    return `
+      <div onclick="${isUnlocked ? `setAvatarFrame('${frame.id}')` : ''}" class="p-2.5 rounded-2xl border transition ${isUnlocked ? 'cursor-pointer active:scale-95' : 'opacity-40 cursor-not-allowed'} ${isSelected ? 'bg-indigo-600/30 border-indigo-400' : 'bg-slate-950/60 border-slate-800'}">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-xl ${frame.class} bg-slate-900 flex items-center justify-center text-sm">✨</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[11px] font-bold text-white truncate">${frame.name}</div>
+            <div class="text-[9px] text-slate-500">${isUnlocked ? (isSelected ? '✓ Equipped' : 'Equip') : '🔒 Locked'}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setMascotFilter(tier) {
+  currentMascotFilter = tier;
+  ['ALL', 'SCR', 'UR', 'SSR', 'SR', 'R'].forEach(t => {
+    const btn = document.getElementById(`mascotTab_${t}`);
+    if (btn) {
+      btn.className = (t === tier)
+        ? 'px-2 py-0.5 rounded-lg bg-indigo-600 text-white transition'
+        : 'px-2 py-0.5 rounded-lg text-slate-400 hover:text-white transition';
+    }
+  });
+  renderMascotGrid();
+}
+
+function renderMascotGrid() {
   const grid = document.getElementById('mascotGrid');
+  if (!grid) return;
   grid.innerHTML = '';
-  const entries = Object.entries(state.inventory);
+
+  let entries = Object.entries(state.inventory);
+  if (currentMascotFilter !== 'ALL') {
+    entries = entries.filter(([_, data]) => data.tier === currentMascotFilter);
+  }
 
   if (entries.length === 0) {
-    grid.innerHTML = '<div class="col-span-full py-4 text-xs text-slate-500 italic text-center">Pull emojis first to set them as mascot!</div>';
-    document.getElementById('mascotModal').classList.remove('hidden');
+    grid.innerHTML = '<div class="col-span-full py-4 text-xs text-slate-500 italic text-center">No unlocked emojis in this category.</div>';
     return;
   }
 
-  const tierGroups = { 'UR': [], 'SSR': [], 'SR': [], 'R': [] };
-  entries.forEach(([emoji, data]) => {
-    if (tierGroups[data.tier]) tierGroups[data.tier].push({ emoji, ...data });
-  });
+  grid.innerHTML = entries.map(([emoji, data]) => {
+    let borderStyle = 'border-slate-700 bg-slate-800';
+    if (data.tier === 'SCR') borderStyle = 'border-rose-400 bg-rose-950/40 glow-scr';
+    else if (data.tier === 'UR') borderStyle = 'border-pink-400/50 bg-slate-800 glow-ur';
+    else if (data.tier === 'SSR') borderStyle = 'border-amber-400/50 bg-slate-800 glow-ssr';
 
-  const tierColors = {
-    UR: 'text-pink-400 border-pink-500/30',
-    SSR: 'text-amber-400 border-amber-500/30',
-    SR: 'text-purple-400 border-purple-500/30',
-    R: 'text-slate-400 border-slate-700'
-  };
-
-  let html = '';
-  ['UR', 'SSR', 'SR', 'R'].forEach(tier => {
-    if (tierGroups[tier].length > 0) {
-      html += `<div class="col-span-full text-[11px] font-black tracking-wider uppercase pt-2 pb-1 border-b border-slate-800 ${tierColors[tier]} flex items-center justify-between">
-        <span>${tier} Tier</span>
-        <span class="text-[10px] text-slate-500 font-mono">${tierGroups[tier].length} unlocked</span>
-      </div>`;
-      tierGroups[tier].forEach(item => {
-        html += `<button onclick="setMascot('${item.emoji}')" title="${item.name}" class="p-2 text-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl border border-slate-700 transition flex items-center justify-center">
-          ${item.emoji}
-        </button>`;
-      });
-    }
-  });
-
-  grid.innerHTML = html;
-  document.getElementById('mascotModal').classList.remove('hidden');
+    return `
+      <button onclick="setMascot('${emoji}')" title="${data.name}" class="p-2 text-2xl hover:bg-slate-700 active:scale-95 rounded-xl border transition flex items-center justify-center ${borderStyle}">
+        ${emoji}
+      </button>
+    `;
+  }).join('');
 }
 
 function setMascot(emoji) {
@@ -973,52 +1099,102 @@ function setMascot(emoji) {
   closeMascotModal();
 }
 
-function closeMascotModal() {
-  document.getElementById('mascotModal').classList.add('hidden');
-}
-
 // --- STAR FORMATTING HELPER ---
-function getStarsHtml(stars, isRainbow) {
-  if (isRainbow) return '<span class="rainbow-text font-black text-xs sm:text-sm">🌈★ (Rainbow Ascended)</span>';
-  if (stars <= 5) return `<span class="text-amber-400 font-black">${'★'.repeat(stars)}</span>`;
-  if (stars <= 7) return `<span class="text-cyan-400 font-black drop-shadow-[0_0_6px_rgba(34,211,238,0.8)]">${'★'.repeat(stars)}</span>`;
-  if (stars <= 9) return `<span class="text-fuchsia-400 font-black drop-shadow-[0_0_6px_rgba(232,121,249,0.8)]">${'★'.repeat(stars)}</span>`;
-  if (stars === 10) return `<span class="text-rose-500 font-black drop-shadow-[0_0_8px_rgba(244,63,94,0.9)]">${'★'.repeat(10)}</span>`;
-  return `<span class="text-amber-400 font-black">★</span>`;
+// --- 5-SLOT OVERLAPPING STAR FORMATTER (CRK STYLE) ---
+function getStarsHtml(stars, isRainbow, tier = 'R') {
+  if (isRainbow) {
+    return `<div class="flex items-center justify-center gap-0.5"><span class="star-rainbow-icon text-xs sm:text-sm font-black tracking-tighter">★★★★★</span></div>`;
+  }
+
+  // SCR max stars = 5
+  if (tier === 'SCR') {
+    let slots = '';
+    for (let i = 1; i <= 5; i++) {
+      slots += (i <= stars)
+        ? `<span class="star-awakened text-xs sm:text-sm">★</span>`
+        : `<span class="star-empty text-xs sm:text-sm">★</span>`;
+    }
+    return `<div class="flex items-center justify-center gap-0.5">${slots}</div>`;
+  }
+
+  // Standard tiers (1-10 Stars looping over 5 slots)
+  let slots = '';
+  if (stars <= 5) {
+    for (let i = 1; i <= 5; i++) {
+      slots += (i <= stars)
+        ? `<span class="star-gold text-xs sm:text-sm">★</span>`
+        : `<span class="star-empty text-xs sm:text-sm">★</span>`;
+    }
+  } else {
+    const awakenedCount = stars - 5;
+    for (let i = 1; i <= 5; i++) {
+      slots += (i <= awakenedCount)
+        ? `<span class="star-awakened text-xs sm:text-sm">★</span>`
+        : `<span class="star-gold text-xs sm:text-sm">★</span>`;
+    }
+  }
+  return `<div class="flex items-center justify-center gap-0.5">${slots}</div>`;
 }
 
 // --- REBALANCED PULL LOGIC (UR 0.8%, SSR 3.2%, SR 32%, R 64% - SSR PITY = 40) ---
+// --- REBALANCED SUMMON RNG ENGINE WITH SCR & DEV RIGS ---
 function getSinglePull(is10thGuaranteed = false) {
+  state.scrPity = (state.scrPity || 0) + 1;
   state.urPity++;
   state.ssrPity++;
   state.totalPulls++;
   state.dailyPullsCount++;
 
   let tier = 'R';
+  const isPityScr = (state.scrPity >= 1000);
   const isPityUr = (state.urPity >= 100);
 
-  // 1. UR Pity at 100 or 0.8% base
-  if (isPityUr || Math.random() < 0.008) {
+  // Dev Tool Forced Tier Override
+  if (devForcedNextTier) {
+    tier = devForcedNextTier;
+    devForcedNextTier = null;
+  }
+  // 1. Secret Rare (SCR): 0.02% base chance or 1,000 Pity
+  else if (isPityScr || Math.random() < 0.0002) {
+    tier = 'SCR';
+    state.scrPity = 0;
+    state.urPity = 0;
+    state.ssrPity = 0;
+    state.hasUnlockedScr = true;
+  }
+  // 2. Ultra Rare (UR): 0.80% base chance or 100 Pity
+  else if (isPityUr || Math.random() < 0.008) {
     tier = 'UR';
     state.urPity = 0;
     state.ssrPity = 0;
-  } 
-  // 2. SSR Pity at 40 or 3.2% base
+  }
+  // 3. Super Special Rare (SSR): 3.20% base chance or 40 Pity
   else if (state.ssrPity >= 40 || Math.random() < 0.032) {
     tier = 'SSR';
     state.ssrPity = 0;
-  } 
-  // 3. SR Guarantee on 10th or 32% base
+  }
+  // 4. Special Rare (SR): 32% base chance or 10-pull guarantee
   else if (is10thGuaranteed || Math.random() < 0.32) {
     tier = 'SR';
   } else {
     tier = 'R';
   }
 
+  // Pool Selection & Focus Targets
   const activePool = BANNER_POOLS[state.currentBannerId] || POOL;
-  const poolList = activePool[tier];
-  const focusEmoji = state.focusTargets ? state.focusTargets[state.currentBannerId] : null;
-  const chosen = pickFromPool(poolList, tier === 'UR' ? focusEmoji : null);
+  let poolList = [];
+  let focusEmoji = null;
+
+  if (tier === 'SCR') {
+    poolList = SCR_POOL;
+    focusEmoji = state.focusTargets.scr;
+  } else {
+    poolList = activePool[tier];
+    if (tier === 'UR') focusEmoji = state.focusTargets[state.currentBannerId];
+    else if (tier === 'SSR') focusEmoji = state.focusTargets.ssr;
+  }
+
+  const chosen = pickFromPool(poolList, focusEmoji);
   let isNew = false;
   let addedShards = 0;
 
@@ -1042,7 +1218,7 @@ function getSinglePull(is10thGuaranteed = false) {
 
   const currentItem = state.inventory[chosen.emoji];
 
-  // FAKEOUT: ไม่เกิดในครั้งการันตี 100 โรลเด็ดขาด (!isPityUr)
+  // FAKEOUT SYSTEM: SCR has no fakeout. UR triggers fakeout if enabled and not hard pity.
   let isFakeout = false;
   let fakeoutDisguise = null;
   if (state.fakeoutEnabled && tier === 'UR' && !isPityUr && Math.random() < 0.35) {
@@ -1183,10 +1359,16 @@ function playLaptopIntro(hasUr, hasSsr, hasSr) {
   }, 1650);
 }
 
+// --- REVEAL FLOW WITH SCR & UR CUTSCENE SEQUENCING ---
 function proceedToReveal() {
   if (fastModeEnabled) {
+    const scrItems = currentSessionPulls.filter(p => p.tier === 'SCR');
     const urItems = currentSessionPulls.filter(p => p.tier === 'UR');
-    if (urItems.length > 0) {
+
+    if (scrItems.length > 0 && !state.skipScrCutscenes) {
+      pendingScrCutscenes = [...scrItems];
+      triggerNextScrCutscene();
+    } else if (urItems.length > 0) {
       pendingUrCutscenes = [...urItems];
       triggerNextUrCutsceneWithTyping();
     } else {
@@ -1200,7 +1382,6 @@ function proceedToReveal() {
   displayCurrentCard();
 }
 
-// --- CARD BY CARD DISPLAY (FLOAT & SLAM + 3-TAP FAKEOUT) ---
 function displayCurrentCard() {
   if (currentRevealIndex >= currentSessionPulls.length) {
     document.getElementById('revealStage').classList.add('hidden');
@@ -1219,18 +1400,17 @@ function displayCurrentCard() {
   const progressText = document.getElementById('revealProgressText');
 
   progressText.innerText = `PULL ${currentRevealIndex + 1} / ${currentSessionPulls.length}`;
-
-  card.classList.remove('card-pop-in', 'card-float-slam', 'fakeout-card');
+  card.classList.remove('card-pop-in', 'card-float-slam', 'fakeout-card', 'dimension-shatter');
   void card.offsetWidth;
 
   if (item.isFakeout) {
     if (item.disguiseTier === 'SR') {
       card.className = 'card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-sr';
-      starsEl.innerHTML = '<span class="text-purple-300 font-bold">★ ★</span>';
+      starsEl.innerHTML = '<span class="star-gold text-xs">★★</span>';
       badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/40';
     } else {
       card.className = 'card-pop-in relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-r';
-      starsEl.innerHTML = '<span class="text-slate-400 font-bold">★</span>';
+      starsEl.innerHTML = '<span class="star-gold text-xs">★</span>';
       badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
     }
 
@@ -1261,7 +1441,7 @@ function displayCurrentCard() {
 
   emojiEl.innerText = item.emoji;
   nameEl.innerText = item.name;
-  starsEl.innerHTML = getStarsHtml(item.stars, item.isRainbow);
+  starsEl.innerHTML = getStarsHtml(item.stars, item.isRainbow, item.tier);
 
   noticeEl.classList.add('hidden');
   if (item.isNew) {
@@ -1274,11 +1454,26 @@ function displayCurrentCard() {
     noticeEl.classList.remove('hidden');
   }
 
-  if (item.tier === 'UR') {
+  if (item.tier === 'SCR') {
+    card.className = 'card-float-slam relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-scr';
+    badgeEl.innerText = 'SECRET RARE';
+    badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full bg-rose-500/30 text-rose-300 border border-rose-400/70 shadow-lg';
+    if (!state.skipScrCutscenes) {
+      triggerScrCutscene(item);
+    } else {
+      playSound('ur');
+    }
+  } else if (item.tier === 'UR') {
     card.className = 'card-float-slam relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-ur';
     badgeEl.innerText = 'UR COSMIC';
     badgeEl.className = 'text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full bg-pink-500/30 text-pink-300 border border-pink-400/60';
-    triggerUrWithTyping(item);
+    
+    // Skip duplicate UR typing if setting enabled
+    if (state.skipDuplicateUr && !item.isNew) {
+      playSound('ur');
+    } else {
+      triggerUrWithTyping(item);
+    }
   } else if (item.tier === 'SSR') {
     card.className = 'card-float-slam relative w-68 sm:w-80 aspect-[3/4] rounded-3xl border-2 flex flex-col items-center justify-center p-6 text-center transition-all duration-300 glow-ssr';
     badgeEl.innerText = 'SSR GOLD';
@@ -1297,39 +1492,50 @@ function displayCurrentCard() {
   }
 }
 
-function onRevealScreenTapped(e) {
-  if (e.target.closest('button')) return;
-
-  const item = currentSessionPulls[currentRevealIndex];
-  if (item && item.isFakeout) {
-    item.fakeoutClicks++;
-    if (item.fakeoutClicks < 3) {
-      playSound('pop');
-      displayCurrentCard();
-      return;
-    } else {
-      item.isFakeout = false;
-      playSound('glass_shatter');
-      document.getElementById('appBody').classList.add('shake-screen');
-      setTimeout(() => document.getElementById('appBody').classList.remove('shake-screen'), 450);
-      displayCurrentCard();
-      return;
-    }
-  }
-
-  currentRevealIndex++;
-  displayCurrentCard();
-}
-
 function skipAllReveals() {
   const remainingPulls = currentSessionPulls.slice(currentRevealIndex);
+  const remainingScrs = remainingPulls.filter(p => p.tier === 'SCR');
   const remainingUrs = remainingPulls.filter(p => p.tier === 'UR');
 
   document.getElementById('revealStage').classList.add('hidden');
 
-  if (remainingUrs.length > 0) {
+  if (remainingScrs.length > 0 && !state.skipScrCutscenes) {
+    pendingScrCutscenes = [...remainingScrs];
+    triggerNextScrCutscene();
+  } else if (remainingUrs.length > 0 && !state.skipDuplicateUr) {
     pendingUrCutscenes = [...remainingUrs];
     triggerNextUrCutsceneWithTyping();
+  } else {
+    showSummaryModal();
+  }
+}
+
+// --- SCR DIMENSION SHATTER CUTSCENE ENGINE ---
+function triggerScrCutscene(item) {
+  const stage = document.getElementById('scrCutsceneStage');
+  document.getElementById('scrCutsceneEmoji').innerText = item.emoji;
+  document.getElementById('scrCutsceneName').innerText = item.name;
+
+  stage.classList.remove('hidden');
+  stage.classList.add('dimension-shatter');
+  setTimeout(() => stage.classList.remove('dimension-shatter'), 750);
+
+  playSound('ur_laptop');
+}
+
+function triggerNextScrCutscene() {
+  if (pendingScrCutscenes.length === 0) {
+    showSummaryModal();
+    return;
+  }
+  const item = pendingScrCutscenes.shift();
+  triggerScrCutscene(item);
+}
+
+function dismissScrCutscene() {
+  document.getElementById('scrCutsceneStage').classList.add('hidden');
+  if (pendingScrCutscenes.length > 0) {
+    triggerNextScrCutscene();
   } else {
     showSummaryModal();
   }
@@ -1385,7 +1591,6 @@ function triggerNextUrCutsceneWithTyping() {
 
 function showUrCutsceneDirect(item) {
   const cutscene = document.getElementById('cutsceneStage');
-
   document.getElementById('cutsceneEmoji').innerText = item.emoji;
   document.getElementById('cutsceneItemName').innerText = item.name;
 
@@ -1634,21 +1839,40 @@ function updateEmojiModalContent() {
   }
 }
 
+// --- PROMOTION ENGINE (SCR 5★ TO RAINBOW ASCENSION) ---
 function promoteCurrentEmoji() {
   const item = state.inventory[selectedEmoji];
   if (!item || item.isRainbow) return;
 
-  const needed = STAR_REQUIREMENTS[item.stars] || 10;
+  const isScr = (item.tier === 'SCR');
+  const needed = isScr
+    ? (STAR_REQUIREMENTS[item.stars] || 20)
+    : (STAR_REQUIREMENTS[item.stars] || 10);
+
   if (item.shards >= needed) {
     item.shards -= needed;
     state.dailyPromotesCount++;
-    if (item.stars === 10) {
-      item.isRainbow = true;
-      playSound('promote_rainbow');
+
+    // SCR caps out at 5 Stars and ascends straight to Rainbow
+    if (isScr) {
+      if (item.stars >= 4) {
+        item.stars = 5;
+        item.isRainbow = true;
+        playSound('promote_rainbow');
+      } else {
+        item.stars++;
+        playSound('promote');
+      }
     } else {
-      item.stars++;
-      playSound('promote');
+      if (item.stars === 10) {
+        item.isRainbow = true;
+        playSound('promote_rainbow');
+      } else {
+        item.stars++;
+        playSound('promote');
+      }
     }
+
     saveState();
     updateEmojiModalContent();
   }
@@ -2191,12 +2415,22 @@ function mineClick() {
 }
 
 // --- COUPON CODES ---
+// --- PROMO CODE HANDLER & DEVELOPER RIG TERMINAL ---
 function redeemCoupon() {
   const input = document.getElementById('couponInput');
   const msg = document.getElementById('couponMsg');
   const code = input.value.trim().toUpperCase();
 
   if (!code) return;
+
+  // Secret Developer Terminal Activation Code
+  if (code === '681210656') {
+    input.value = '';
+    msg.className = 'text-xs text-rose-400 font-bold';
+    msg.innerText = '⚠️ Developer Terminal Access Granted.';
+    openDevToolModal();
+    return;
+  }
 
   if (state.redeemedCodes.includes(code)) {
     msg.className = 'text-xs text-rose-400 font-semibold';
@@ -2217,6 +2451,69 @@ function redeemCoupon() {
     msg.className = 'text-xs text-rose-400 font-semibold';
     msg.innerText = 'Invalid promo code.';
   }
+}
+
+// --- DEV TOOL MODAL LOGIC ---
+function openDevToolModal() {
+  document.getElementById('devToolModal').classList.remove('hidden');
+}
+
+function closeDevToolModal() {
+  document.getElementById('devToolModal').classList.add('hidden');
+}
+
+function devAddGems(amount) {
+  state.gems += amount;
+  saveState();
+  playSound('ssr');
+  showToast(`🛠️ Dev: Added +${amount.toLocaleString()} Gems!`);
+}
+
+function devSetPity(type, val) {
+  if (type === 'ur') state.urPity = val;
+  if (type === 'scr') state.scrPity = val;
+  saveState();
+  playSound('pop');
+  showToast(`🛠️ Dev: Set ${type.toUpperCase()} Pity to ${val}`);
+}
+
+function devForceNext(tier) {
+  devForcedNextTier = tier;
+  playSound('ur');
+  showToast(`🛠️ Dev: Forced next summon to guarantee: <strong>${tier}</strong>!`);
+  closeDevToolModal();
+}
+
+function devUnlockAllEmojis() {
+  SCR_POOL.forEach(it => {
+    if (!state.inventory[it.emoji]) {
+      state.inventory[it.emoji] = { name: it.name, tier: 'SCR', count: 1, shards: 50, stars: 1, isRainbow: false, isPinned: false };
+    }
+  });
+  Object.keys(POOL).forEach(t => {
+    POOL[t].forEach(it => {
+      if (!state.inventory[it.emoji]) {
+        state.inventory[it.emoji] = { name: it.name, tier: t, count: 1, shards: 30, stars: 1, isRainbow: false, isPinned: false };
+      }
+    });
+  });
+  state.hasUnlockedScr = true;
+  saveState();
+  playSound('ur_laptop');
+  showToast('🛠️ Dev: All emojis and relics unlocked!');
+  closeDevToolModal();
+}
+
+function toggleSkipUrSetting() {
+  state.skipDuplicateUr = !state.skipDuplicateUr;
+  saveState();
+  updateSettingsUI();
+}
+
+function toggleSkipScrSetting() {
+  state.skipScrCutscenes = !state.skipScrCutscenes;
+  saveState();
+  updateSettingsUI();
 }
 
 // --- FILTER HANDLER ---
@@ -2317,6 +2614,29 @@ function renderInventory() {
 
   updatePromoteAllBtnUI();
 }
+
+  // Update Username and Mascot Avatar Frame in Header
+  const unameEl = document.getElementById('headerUsername');
+  if (unameEl) unameEl.innerText = state.username || 'Summoner';
+
+  const frameEl = document.getElementById('headerMascotFrame');
+  if (frameEl) {
+    frameEl.className = `w-10 h-10 rounded-2xl flex items-center justify-center avatar-frame-${state.avatarFrame || 'default'} bg-slate-900 shadow-md cursor-pointer transition active:scale-95`;
+  }
+
+  // Show / Hide SCR Pity Box
+  const scrPityBox = document.getElementById('scrPityBox');
+  if (scrPityBox) {
+    scrPityBox.classList.toggle('hidden', !state.hasUnlockedScr);
+    const scrPityCount = document.getElementById('scrPityCount');
+    if (scrPityCount) scrPityCount.innerText = state.scrPity || 0;
+  }
+
+  // Show / Hide SCR Setting in Settings
+  const skipScrSettingWrapper = document.getElementById('skipScrSettingWrapper');
+  if (skipScrSettingWrapper) {
+    skipScrSettingWrapper.classList.toggle('hidden', !state.hasUnlockedScr);
+  }
 
 function renderUI() {
   document.getElementById('gemCount').innerText = state.gems.toLocaleString();
