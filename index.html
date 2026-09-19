@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Emoji Gacha Simulator v2.8.0</title>
+  <title>Emoji Gacha Simulator v2.9.0</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- External Stylesheet -->
@@ -22,19 +22,27 @@
   <header id="mainHeader" class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-2.5 px-3 sm:px-6 shadow-lg transition-opacity duration-300">
     <div class="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar py-0.5">
       
-      <!-- Brand & Mascot (Clickable Mascot!) -->
-      <div class="flex items-center gap-2 shrink-0">
-        <button onclick="openMascotModal()" id="mascotIconBtn" class="text-2xl hover:scale-110 active:scale-95 transition" title="Change Mascot Emoji">
-          ✨
-        </button>
-        <div>
-          <h1 class="font-black text-sm sm:text-base tracking-wide bg-gradient-to-r from-pink-400 via-amber-400 to-indigo-400 bg-clip-text text-transparent leading-none">
-            EMOJI GACHA
-          </h1>
-          <button onclick="openPatchNotesModal()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono px-1.5 py-0.5 rounded border border-slate-700 flex items-center gap-1 mt-0.5">
-            <span>📜 v2.8.0</span>
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <!-- Brand & Mascot with Avatar Frame and Username -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <div id="headerMascotFrame" class="w-10 h-10 rounded-2xl flex items-center justify-center avatar-frame-default bg-slate-900 shadow-md cursor-pointer transition active:scale-95" onclick="openMascotModal()" title="Customize Profile & Mascot">
+          <button id="mascotIconBtn" class="text-2xl leading-none select-none">
+            ✨
           </button>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span id="headerUsername" onclick="openMascotModal()" class="font-black text-xs sm:text-sm text-white tracking-wide cursor-pointer hover:text-indigo-300 transition">Summoner</span>
+            <span class="text-[9px] font-mono text-slate-500 font-bold px-1 py-0.2 rounded bg-slate-800 border border-slate-700">LVL 1</span>
+          </div>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <h1 class="font-black text-[11px] tracking-wider bg-gradient-to-r from-pink-400 via-amber-400 to-indigo-400 bg-clip-text text-transparent leading-none">
+              EMOJI GACHA
+            </h1>
+            <button onclick="openPatchNotesModal()" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-indigo-300 font-mono px-1 py-0.5 rounded border border-slate-700 flex items-center gap-1">
+              <span>📜 v2.9.0</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -127,8 +135,12 @@
           </div>
         </div>
 
-        <!-- Pity info (UR + SSR Pity) -->
-        <div class="text-xs text-slate-400 mb-6 flex flex-wrap justify-center gap-4 font-mono">
+                <!-- Pity info (SCR + UR + SSR Pity) -->
+        <div class="text-xs text-slate-400 mb-6 flex flex-wrap justify-center items-center gap-3 sm:gap-4 font-mono">
+          <!-- Hidden SCR Pity until unlocked -->
+          <span id="scrPityBox" class="hidden text-rose-400 font-bold bg-rose-950/40 border border-rose-500/40 px-2 py-0.5 rounded-lg shadow-sm">
+            SCR Pity: <strong id="scrPityCount" class="text-rose-300">0</strong>/1000
+          </span>
           <span>SSR Pity: <strong id="ssrPityCount" class="text-amber-400 font-bold">0</strong>/40</span>
           <span>UR Pity: <strong id="urPityCount" class="text-pink-400 font-bold">0</strong>/100</span>
           <span>Total: <strong id="totalPullsCount" class="text-indigo-400 font-bold">0</strong></span>
@@ -393,19 +405,51 @@
     </div>
   </div>
 
-  <!-- ================= MASCOT SELECTOR MODAL ================= -->
+    <!-- ================= PROFILE & MASCOT SELECTOR MODAL ================= -->
   <div id="mascotModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-slate-900 border border-slate-700 max-w-sm w-full rounded-3xl p-6 shadow-2xl space-y-4">
+    <div class="bg-slate-900 border border-indigo-500/40 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center pb-2 border-b border-slate-800">
         <h3 class="text-sm font-black text-white flex items-center gap-2">
-          <span>✨</span> Choose Header Mascot
+          <span>✨</span> Profile & Mascot Studio
         </h3>
         <button onclick="closeMascotModal()" class="text-slate-400 hover:text-white">✕</button>
       </div>
-      <p class="text-[11px] text-slate-400">Select any unlocked emoji from your collection:</p>
-      <div id="mascotGrid" class="grid grid-cols-5 gap-2 max-h-60 overflow-y-auto pr-1"></div>
+
+      <!-- Username Customization Input -->
+      <div class="bg-slate-950/50 p-3 rounded-2xl border border-slate-800 space-y-1.5">
+        <label class="text-[11px] font-bold text-slate-400 uppercase font-mono">Summoner Username</label>
+        <div class="flex gap-2">
+          <input type="text" id="usernameInput" maxlength="16" placeholder="Enter your name" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white w-full focus:outline-none focus:border-indigo-500 font-bold" />
+          <button onclick="saveUsername()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition shrink-0">
+            Save
+          </button>
+        </div>
+      </div>
+
+      <!-- Avatar Frame Selection -->
+      <div class="space-y-2">
+        <label class="text-[11px] font-bold text-amber-300 uppercase font-mono">Avatar Profile Frame</label>
+        <div id="avatarFrameGrid" class="grid grid-cols-2 gap-2 text-xs"></div>
+      </div>
+
+      <!-- Mascot Emoji Filter Tabs -->
+      <div class="space-y-2 pt-1 border-t border-slate-800">
+        <div class="flex justify-between items-center">
+          <label class="text-[11px] font-bold text-slate-400 uppercase font-mono">Choose Mascot Emoji</label>
+          <div class="flex items-center gap-1 bg-slate-950/70 p-0.5 rounded-xl border border-slate-800 text-[10px] font-bold">
+            <button onclick="setMascotFilter('ALL')" id="mascotTab_ALL" class="px-2 py-0.5 rounded-lg bg-indigo-600 text-white transition">ALL</button>
+            <button onclick="setMascotFilter('SCR')" id="mascotTab_SCR" class="hidden px-2 py-0.5 rounded-lg text-rose-400 hover:text-white transition">SCR</button>
+            <button onclick="setMascotFilter('UR')" id="mascotTab_UR" class="px-2 py-0.5 rounded-lg text-pink-400 hover:text-white transition">UR</button>
+            <button onclick="setMascotFilter('SSR')" id="mascotTab_SSR" class="px-2 py-0.5 rounded-lg text-amber-400 hover:text-white transition">SSR</button>
+            <button onclick="setMascotFilter('SR')" id="mascotTab_SR" class="px-2 py-0.5 rounded-lg text-purple-400 hover:text-white transition">SR</button>
+            <button onclick="setMascotFilter('R')" id="mascotTab_R" class="px-2 py-0.5 rounded-lg text-slate-400 hover:text-white transition">R</button>
+          </div>
+        </div>
+        <div id="mascotGrid" class="grid grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-1"></div>
+      </div>
+
       <button onclick="closeMascotModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs transition">
-        Cancel
+        Close
       </button>
     </div>
   </div>
@@ -854,7 +898,7 @@
           </button>
         </div>
 
-        <!-- Fast Summon Mode -->
+                <!-- Fast Summon Mode -->
         <div class="flex justify-between items-center">
           <div>
             <div class="font-bold text-white text-xs sm:text-sm">Fast Summon Mode</div>
@@ -864,7 +908,30 @@
             <div id="fastToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-0"></div>
           </button>
         </div>
-      </div>
+
+        <!-- Skip UR Cutscene on Skip All -->
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-bold text-white text-xs sm:text-sm">Skip Duplicate UR Cutscenes</div>
+            <div class="text-[10px] text-slate-400">Bypass full typing sequence for owned URs</div>
+          </div>
+          <button id="skipUrToggleBtn" onclick="toggleSkipUrSetting()" class="w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center">
+            <div id="skipUrToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-6"></div>
+          </button>
+        </div>
+
+        <!-- Skip SCR Cutscene (Hidden until SCR discovered) -->
+        <div id="skipScrSettingWrapper" class="hidden justify-between items-center border-t border-slate-800/80 pt-2">
+          <div>
+            <div class="font-bold text-rose-300 text-xs sm:text-sm flex items-center gap-1.5">
+              <span>🌌</span> Skip SCR Dimension Cutscenes
+            </div>
+            <div class="text-[10px] text-slate-400">Bypass cosmic entrance animation</div>
+          </div>
+          <button id="skipScrToggleBtn" onclick="toggleSkipScrSetting()" class="w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center">
+            <div id="skipScrToggleDot" class="w-4 h-4 bg-white rounded-full transition transform translate-x-0"></div>
+          </button>
+        </div>
 
       <!-- Compact Save Data Transfer -->
       <div class="pt-3 border-t border-slate-800 space-y-3">
@@ -928,61 +995,45 @@
           <h3 class="text-lg font-black text-white flex items-center gap-2">
             <span>📜</span> Patch Notes Log
           </h3>
-          <span class="text-[11px] text-indigo-400 font-mono">Current Version: v2.8.0</span>
+          <span class="text-[11px] text-indigo-400 font-mono">Current Version: v2.9.0</span>
         </div>
         <button onclick="closePatchNotesModal()" class="text-slate-400 hover:text-white">✕</button>
       </div>
 
-      <div class="overflow-y-auto space-y-4 my-4 pr-1 text-xs text-slate-300">
-                <!-- v2.8.0 -->
-        <div class="border-l-2 border-indigo-500 pl-3 space-y-1.5">
-          <div class="font-black text-white text-sm">v2.8.0 - "Omniverse & Mobile Polish"</div>
-          <div class="text-[10px] text-slate-500 font-mono">Latest Release · Sep 2026</div>
+            <div class="overflow-y-auto space-y-4 my-4 pr-1 text-xs text-slate-300">
+        <!-- v2.9.0 (Latest Major Release) -->
+        <div class="border-l-2 border-rose-500 pl-3 space-y-1.5">
+          <div class="font-black text-white text-sm flex items-center gap-2">
+            <span>v2.9.0 - "The Secret Realm & Starlight Overhaul"</span>
+            <span class="text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/40 px-1.5 py-0.5 rounded font-mono">CURRENT</span>
+          </div>
+          <div class="text-[10px] text-slate-500 font-mono">Major Expansion · Sep 2026</div>
           <ul class="list-disc list-inside space-y-1 text-slate-400 leading-relaxed">
-            <li><strong>Mobile Layout Polish:</strong> Fixed calendar attendance buttons overlapping rows below on phones; resolved Collection counter wrapping.</li>
-            <li><strong>Language Switcher:</strong> Added bilingual support (Auto Device Language vs English) across primary game UI.</li>
-            <li><strong>Omniverse All-Stars:</strong> New universal banner combining Cosmos and Feelings Parade rosters.</li>
-            <li><strong>Target Focus Modal:</strong> Replaced horizontal slider with high-accessibility pick-up selection modal.</li>
-            <li><strong>Pity Guarantee Integrity:</strong> 100th UR hard-pity summon will never trigger deceptive fakeout cards.</li>
+            <li><strong>Secret Rare (SCR) Tier:</strong> Introduced 6 divine relics (0.02% base chance, 1000 Pity). Hidden from all menus until discovered!</li>
+            <li><strong>SCR Max Ascension:</strong> Secret Rares cap out at 5 Stars, promoting straight into Rainbow Ascension.</li>
+            <li><strong>5-Slot Star Stacking:</strong> Ascended stars past 5★ now loop over existing slots as Radiant Stars (CRK style).</li>
+            <li><strong>Pick-up Expansion:</strong> Added SSR focus targets; unobtained items appear as mysterious dark silhouettes.</li>
+            <li><strong>Profile & Frames:</strong> Added custom Summoner Username and unlockable Avatar Profile Frames.</li>
+            <li><strong>Dev Tools:</strong> Added integrated testing terminal for balance verification.</li>
           </ul>
         </div>
 
-        <!-- v2.7.0 -->
-        <div class="border-l-2 border-pink-500 pl-3 space-y-1.5">
-          <div class="font-black text-white text-sm">v2.7.0 - "Terminal Decryption & Pity Overhaul"</div>
-          <div class="text-[10px] text-slate-500 font-mono">Latest Major Release</div>
-          <ul class="list-disc list-inside space-y-1 text-slate-400 leading-relaxed">
-            <li><strong>Gacha Rates & Pity:</strong> UR rate adjusted to 0.8% (100 Pity). Added SSR Pity (guaranteed at 35 pulls).</li>
-            <li><strong>Fakeout Overhaul:</strong> 3 taps required to shatter disguise. Native disguise frame retained. Settings toggle added.</li>
-            <li><strong>UR Decryption Terminal:</strong> Typing terminal effect ("The UR is...") before revealing UR entities.</li>
-            <li><strong>Fixed BGM Player:</strong> Complete rewrite of audio pipeline with reliable Play/Pause states.</li>
-            <li><strong>Live Digital Clock & Mascot Selector:</strong> Added live clock and ability to choose custom header mascots.</li>
-            <li><strong>Codex Silhouettes:</strong> Locked emojis now display grayscale silhouettes.</li>
+        <!-- v2.8.0 -->
+        <div class="border-l-2 border-indigo-500 pl-3 space-y-1 text-slate-400">
+          <div class="font-bold text-slate-200">v2.8.0 - "Omniverse & Mobile Polish"</div>
+          <p>Omniverse universal banner, modal target focus, 2-layer collection filtering, and bilingual engine.</p>
+        </div>
+
+        <!-- Archive Summary (v2.7.0 and older) -->
+        <div class="border-l-2 border-slate-700 pl-3 space-y-1.5 text-slate-500">
+          <div class="font-bold text-slate-400 text-[11px] uppercase font-mono tracking-wider">📜 Version Archives</div>
+          <ul class="list-disc list-inside space-y-0.5 text-[11px] text-slate-500">
+            <li><strong>v2.7.0:</strong> Terminal typing cutscene, SSR pity (40 pulls), and silhouette codex.</li>
+            <li><strong>v2.6.0:</strong> Pin favorites to top, smooth gradual laptop zoom, and disguise fakeouts.</li>
+            <li><strong>v2.5.0:</strong> Comprehensive Codex library and center slam reveal animations.</li>
+            <li><strong>v2.4.0:</strong> Custom background wallpaper with X/Y positioning and Zen Mode.</li>
+            <li><strong>v2.0.0:</strong> Initial ascension system with 10-Star progressions.</li>
           </ul>
-        </div>
-
-        <!-- v2.6.0 -->
-        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
-          <div class="font-bold text-slate-200">v2.6.0 - "Pin System & Seamless Bloom"</div>
-          <p>Added favorite pinning, smooth gradual laptop zoom with radial bloom, and true fakeout secrecy.</p>
-        </div>
-
-        <!-- v2.5.0 -->
-        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
-          <div class="font-bold text-slate-200">v2.5.0 - "The Codex & Center Slam"</div>
-          <p>Introduced the comprehensive Emoji Codex and center-slam animation for SSR/UR.</p>
-        </div>
-
-        <!-- v2.4.0 -->
-        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
-          <div class="font-bold text-slate-200">v2.4.0 - "Prismatic Cosmos & Studio"</div>
-          <p>Added Wallpaper X/Y pan alignment, Zen Mode, and cutscene replay in collection.</p>
-        </div>
-
-        <!-- v2.0.0 -->
-        <div class="border-l-2 border-slate-700 pl-3 space-y-1 text-slate-400">
-          <div class="font-bold text-slate-200">v2.0.0 - "10-Star Color Ascension"</div>
-          <p>Introduced 10-Star tiering (Gold, Cyan, Purple, Crimson, Rainbow) with custom Soulstone upgrade costs.</p>
         </div>
       </div>
 
@@ -1036,16 +1087,25 @@
     </div>
   </div>
   
-<!-- ================= PICK-UP TARGET MODAL ================= -->
+  <!-- ================= PICK-UP TARGET MODAL ================= -->
   <div id="pickupModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-slate-900 border border-amber-500/40 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center pb-2 border-b border-slate-800">
         <h3 class="text-sm font-black text-white flex items-center gap-2">
-          <span>🎯</span> Select Pick-up Focus (2x UR Rate)
+          <span>🎯</span> Select Pick-up Focus (2x Rate)
         </h3>
         <button onclick="closePickupModal()" class="text-slate-400 hover:text-white">✕</button>
       </div>
-      <p class="text-xs text-slate-400">Select any UR from this banner to double its summon chance within the UR pool:</p>
+      
+      <!-- Pick-up Tier Selection Tabs -->
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-[11px] text-slate-400">Target an emoji to double its summon rate:</p>
+        <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold shrink-0">
+          <button onclick="setPickupTierTab('UR')" id="pickupTab_UR" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white transition">UR</button>
+          <button onclick="setPickupTierTab('SSR')" id="pickupTab_SSR" class="px-2.5 py-1 rounded-lg text-amber-400 hover:bg-slate-800 transition">SSR</button>
+          <button onclick="setPickupTierTab('SCR')" id="pickupTab_SCR" class="hidden px-2.5 py-1 rounded-lg text-rose-400 hover:bg-slate-800 transition">SCR</button>
+        </div>
+      </div>
       
       <div id="pickupModalGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1"></div>
 
@@ -1057,6 +1117,88 @@
           Done
         </button>
       </div>
+    </div>
+  </div>
+
+      <!-- ================= SCR DIMENSION SHATTER CUTSCENE ================= -->
+  <div id="scrCutsceneStage" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center hidden overflow-hidden select-none" onclick="dismissScrCutscene()">
+    <div class="god-rays opacity-90"></div>
+    <div class="absolute inset-0 bg-radial from-rose-600/30 via-purple-950/50 to-black pointer-events-none"></div>
+
+    <div class="relative z-10 text-center space-y-2 mb-6 pointer-events-none">
+      <div class="text-rose-400 font-extrabold tracking-[0.5em] text-xs sm:text-sm uppercase animate-pulse">
+        ✦ ✦ ✦ ✦ ✦
+      </div>
+      <h2 class="text-3xl sm:text-6xl font-black scr-title-gradient drop-shadow-[0_0_40px_rgba(244,63,94,1)]">
+        SECRET RARE!
+      </h2>
+      <div class="text-[11px] font-mono tracking-widest text-cyan-300 uppercase">
+        DIMENSIONAL MATRIX FRACTURE
+      </div>
+    </div>
+
+    <div class="relative z-10 flex flex-col items-center justify-center p-6 pointer-events-none">
+      <div id="scrCutsceneEmoji" class="text-9xl filter drop-shadow-[0_0_55px_rgba(244,63,94,1)] animate-bounce">
+        💠
+      </div>
+      <div id="scrCutsceneName" class="mt-6 text-xl sm:text-2xl font-black text-white tracking-wider bg-slate-950/90 px-8 py-2.5 rounded-full border-2 border-rose-500/70 shadow-2xl">
+        Diamond with a Dot
+      </div>
+    </div>
+
+    <div class="relative z-10 mt-8 text-slate-400 text-xs sm:text-sm tracking-widest uppercase animate-pulse pointer-events-none font-mono">
+      [ Tap to accept the relic ]
+    </div>
+  </div>
+
+  <!-- ================= DEV TOOL MODAL ================= -->
+  <div id="devToolModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border-2 border-rose-500/60 max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-black text-rose-400 flex items-center gap-2">
+          <span>🛠️</span> Developer Rig Terminal
+        </h3>
+        <button onclick="closeDevToolModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <!-- Gems Spawner -->
+        <div class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+          <span class="font-bold text-slate-300">Gems Controls:</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="devAddGems(100000)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl font-mono text-amber-300 font-bold border border-slate-700">+100k</button>
+            <button onclick="devAddGems(1000000)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl font-mono text-amber-300 font-bold border border-slate-700">+1M</button>
+            <button onclick="devAddGems(10000000)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl font-mono text-amber-300 font-bold border border-slate-700">+10M</button>
+          </div>
+        </div>
+
+        <!-- Pity Setters -->
+        <div class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+          <span class="font-bold text-slate-300">Pity Primers (Trigger next pull):</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="devSetPity('ur', 99)" class="bg-pink-600/30 hover:bg-pink-600/50 border border-pink-500/50 py-2 rounded-xl font-bold text-pink-300">Set UR Pity 99/100</button>
+            <button onclick="devSetPity('scr', 999)" class="bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500/50 py-2 rounded-xl font-bold text-rose-300">Set SCR Pity 999/1000</button>
+          </div>
+        </div>
+
+        <!-- Rig Force Next Roll -->
+        <div class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+          <span class="font-bold text-slate-300">Force Guaranteed Next Pull:</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="devForceNext('UR')" class="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl font-bold text-pink-400 border border-slate-700">Force Next UR</button>
+            <button onclick="devForceNext('SCR')" class="bg-slate-800 hover:bg-slate-700 py-2 rounded-xl font-bold text-rose-400 border border-slate-700">Force Next SCR</button>
+          </div>
+        </div>
+
+        <!-- Unlock All Test -->
+        <button onclick="devUnlockAllEmojis()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2.5 rounded-xl font-bold text-white transition active:scale-95 shadow">
+          🔓 Unlock All Emojis & Frames (Test Mode)
+        </button>
+      </div>
+
+      <button onclick="closeDevToolModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs transition">
+        Close Terminal
+      </button>
     </div>
   </div>
   
