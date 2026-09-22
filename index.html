@@ -102,8 +102,8 @@
       <button class="bannerTabBtn text-xs font-bold px-3 py-1.5 rounded-full border transition active:scale-95 bg-slate-800 border-slate-700 text-slate-400 hover:text-white" data-banner-id="all" onclick="switchBanner('all')">🌌 Omniverse</button>
       </div>
 
-      <!-- Banner Box -->
-      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-indigo-950/60 to-slate-900 border border-pink-500/30 p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+      <!-- Banner Box (Isolated to prevent blur bleed) -->
+      <div style="isolation: isolate;" class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-indigo-950/75 to-slate-900 border border-pink-500/30 p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
         <div class="absolute -top-20 -left-20 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-20 -right-20 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -272,6 +272,18 @@
       </div>
     </aside>
   </main>
+  
+  <!-- ================= PERSISTENT DEV TOOL FLOATING BAR ================= -->
+<div id="persistentDevBar" class="fixed bottom-4 left-4 z-40 hidden items-center gap-1.5 bg-slate-900/95 border border-rose-500/60 rounded-full px-3 py-1.5 shadow-2xl backdrop-blur-md">
+  <button onclick="openDevToolModal()" class="flex items-center gap-1 text-xs font-black text-rose-400 hover:text-rose-300 font-mono tracking-wider transition active:scale-95">
+    <span>🛠️</span>
+    <span>Rig Terminal</span>
+  </button>
+  <div class="w-px h-4 bg-slate-700 mx-1"></div>
+  <button onclick="exitDevMode()" class="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded-full hover:bg-slate-800 transition" title="Exit Developer Mode">
+    ✕
+  </button>
+</div>
 
   <!-- ================= FLOATING HIDE UI BUTTON (ZEN MODE) ================= -->
   <button id="zenModeTriggerBtn" onclick="toggleHideUI(event)" class="fixed bottom-4 right-4 z-40 bg-slate-800/80 hover:bg-slate-700 backdrop-blur-md border border-slate-700 text-slate-300 p-3 rounded-full shadow-2xl active:scale-90 transition flex items-center justify-center text-base" title="Hide UI (Zen Wallpaper Mode)">
