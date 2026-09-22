@@ -6,11 +6,17 @@ const SCR_POOL = [
   { emoji: '💻', name: 'Laptop Computer' },
   { emoji: '⚙️', name: 'Gear System' },
   { emoji: '👁️‍🗨️', name: 'Eye in Speech Bubble' },
-  { emoji: '⏳', name: 'Hourglass Done' }
+  { emoji: '⏳', name: 'Hourglass Done' },
+  { emoji: '✨', name: 'Cosmic Sparkles' },
+  { emoji: '⛏️', name: 'Quantum Pickaxe' },
+  { emoji: '🔒', name: 'Cipher Lock' },
+  { emoji: '🕒', name: 'Chrono Clock' },
+  { emoji: '🛠️', name: 'Developer Rig Tools' }
 ];
 
 const POOL = {
   UR: [
+    { emoji: '💎', name: 'Gem Stone' },
     { emoji: '👑', name: 'Crown' },
     { emoji: '🌌', name: 'Milky Way' },
     { emoji: '🪐', name: 'Ringed Planet' },
@@ -26,7 +32,6 @@ const POOL = {
   ],
   SSR: [
     { emoji: '🐉', name: 'Dragon' },
-    { emoji: '💎', name: 'Gem Stone' },
     { emoji: '⚔️', name: 'Crossed Swords' },
     { emoji: '🛡️', name: 'Shield' },
     { emoji: '🏹', name: 'Bow and Arrow' },
