@@ -56,26 +56,37 @@ function playSound(type) {
     const now = ctx.currentTime;
     const masterVol = sfxVolume * getChannelVol(type);
 
-    if (type === 'tick' || type === 'typing') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.setValueAtTime(440, now);
-      gain.gain.setValueAtTime(0.08 * masterVol, now);
-      gain.gain.linearRampToValueAtTime(0.0001, now + 0.08);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.08);
+      if (type === 'tick') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.setValueAtTime(440, now);
+          gain.gain.setValueAtTime(0.12 * masterVol, now); 
+          gain.gain.linearRampToValueAtTime(0.0001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+    } else if (type === 'typing') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(540 + Math.random() * 80, now);
+          gain.gain.setValueAtTime(0.32 * masterVol, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
     } else if (type === 'pop') {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.setValueAtTime(360, now);
-      gain.gain.setValueAtTime(0.15 * masterVol, now);
-      gain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.12);
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.setValueAtTime(360, now);
+          gain.gain.setValueAtTime(0.15 * masterVol, now);
+          gain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
     } else if (type === 'ssr') {
       [523.25, 659.25, 783.99].forEach((f, i) => {
         const osc = ctx.createOscillator();
@@ -977,20 +988,20 @@ function applyLayout(mode) {
   });
 
   if (mode === 'mobile') {
-    container.className = 'max-w-md mx-auto px-4 mt-6 grid grid-cols-1 gap-6 transition-all duration-300 relative z-10';
-    bannerSec.className = 'space-y-6';
-    asideSec.className = 'space-y-6';
+    container.className = 'max-w-md mx-auto px-3 mt-6 flex flex-col gap-6 transition-all duration-300 relative z-10';
+    bannerSec.className = 'space-y-6 w-full';
+    asideSec.className = 'space-y-6 w-full';
     grid.className = 'grid grid-cols-3 gap-2 max-h-96 overflow-y-auto pr-1';
   } else if (mode === 'desktop') {
     container.className = 'max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-300 relative z-10';
     bannerSec.className = 'lg:col-span-2 space-y-6';
     asideSec.className = 'space-y-6';
-    grid.className = 'grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-96 overflow-y-auto pr-1';
+    grid.className = 'grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-96 overflow-y-auto pr-1';
   } else {
     container.className = 'max-w-4xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-300 relative z-10';
     bannerSec.className = 'md:col-span-2 space-y-6';
     asideSec.className = 'space-y-6';
-    grid.className = 'grid grid-cols-3 sm:grid-cols-5 gap-2.5 max-h-96 overflow-y-auto pr-1';
+    grid.className = 'grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto pr-1';
   }
 }
 
@@ -1542,9 +1553,15 @@ function skipAllReveals() {
   if (remainingScrs.length > 0 && !state.skipScrCutscenes) {
     pendingScrCutscenes = [...remainingScrs];
     triggerNextScrCutscene();
-  } else if (remainingUrs.length > 0 && !state.skipDuplicateUr) {
-    pendingUrCutscenes = [...remainingUrs];
-    triggerNextUrCutsceneWithTyping();
+  } else if (remainingUrs.length > 0) {
+    // If skip duplicate UR is enabled, only play cutscene for unowned URs
+    const targets = state.skipDuplicateUr ? remainingUrs.filter(p => p.isNew) : remainingUrs;
+    if (targets.length > 0) {
+      pendingUrCutscenes = [...targets];
+      triggerNextUrCutsceneWithTyping();
+    } else {
+      showSummaryModal();
+    }
   } else {
     showSummaryModal();
   }
@@ -2109,9 +2126,10 @@ function closeRatesModal() { document.getElementById('ratesModal').classList.add
 
 function openSettingsModal() { 
   updateSettingsUI();
-  const exportPayload = {
-    v: 27,
+    const exportPayload = {
+    v: 29,
     g: state.gems,
+    scp: state.scrPity || 0,
     p: state.urPity,
     sp: state.ssrPity,
     tp: state.totalPulls,
@@ -2122,7 +2140,13 @@ function openSettingsModal() {
     rc: state.redeemedCodes,
     cd: state.claimedCalendarDays,
     inv: state.inventory,
-    mascot: state.mascot
+    mascot: state.mascot,
+    u: state.username || 'Summoner',
+    af: state.avatarFrame || 'default',
+    scr: !!state.hasUnlockedScr,
+    sdu: !!state.skipDuplicateUr,
+    ssc: !!state.skipScrCutscenes,
+    l: state.lang || 'en'
   };
   document.getElementById('exportDataBox').value = JSON.stringify(exportPayload);
   document.getElementById('copySuccessMsg').classList.add('hidden');
@@ -2279,6 +2303,29 @@ function updateSettingsUI() {
       ? 'w-4 h-4 bg-white rounded-full transition transform translate-x-6'
       : 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
   }
+    // Update Skip Duplicate UR Toggle Animation
+  const skipUrBtn = document.getElementById('skipUrToggleBtn');
+  const skipUrDot = document.getElementById('skipUrToggleDot');
+  if (skipUrBtn && skipUrDot) {
+    skipUrBtn.className = state.skipDuplicateUr
+      ? 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center'
+      : 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+    skipUrDot.className = state.skipDuplicateUr
+      ? 'w-4 h-4 bg-white rounded-full transition transform translate-x-6'
+      : 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+  }
+
+  // Update Skip SCR Toggle Animation
+  const skipScrBtn = document.getElementById('skipScrToggleBtn');
+  const skipScrDot = document.getElementById('skipScrToggleDot');
+  if (skipScrBtn && skipScrDot) {
+    skipScrBtn.className = state.skipScrCutscenes
+      ? 'w-12 h-6 bg-indigo-600 rounded-full transition p-1 flex items-center'
+      : 'w-12 h-6 bg-slate-700 rounded-full transition p-1 flex items-center';
+    skipScrDot.className = state.skipScrCutscenes
+      ? 'w-4 h-4 bg-white rounded-full transition transform translate-x-6'
+      : 'w-4 h-4 bg-white rounded-full transition transform translate-x-0';
+  }
 }
 
 function copySaveData() {
@@ -2322,6 +2369,13 @@ function restoreSaveData() {
     state.sfxTyping = p.sfxTyping ?? state.sfxTyping;
     state.sfxBass = p.sfxBass ?? state.sfxBass;
     state.showShareBtn = p.showShareBtn ?? state.showShareBtn;
+    state.scrPity = p.scp ?? state.scrPity ?? 0;
+    state.username = p.u ?? state.username ?? 'Summoner';
+    state.avatarFrame = p.af ?? state.avatarFrame ?? 'default';
+    state.hasUnlockedScr = p.scr ?? state.hasUnlockedScr ?? false;
+    state.skipDuplicateUr = p.sdu ?? state.skipDuplicateUr ?? true;
+    state.skipScrCutscenes = p.ssc ?? state.skipScrCutscenes ?? false;
+    state.lang = p.l ?? state.lang ?? 'en';
 
     saveState();
     document.getElementById('importDataInput').value = '';
@@ -2515,6 +2569,8 @@ function redeemCoupon() {
     input.value = '';
     msg.className = 'text-xs text-rose-400 font-bold';
     msg.innerText = '⚠️ Developer Terminal Access Granted.';
+    state.isDevActive = true;
+    updateDevBarUI();
     openDevToolModal();
     return;
   }
@@ -2797,6 +2853,7 @@ function renderUI() {
   document.getElementById('mineProgressText').innerText = `${state.mineClicks}/5 Hits`;
 
   renderInventory();
+  updateDevBarUI();
 }
 
 // --- BILINGUAL SYSTEM ---
@@ -2835,6 +2892,29 @@ function applyLanguage() {
   if (colHint) colHint.innerText = t('collection_hint');
   const sAll = document.getElementById('seriesBtn_ALL');
   if (sAll) sAll.innerText = t('filter_all_sets');
+}
+
+function updateDevBarUI() {
+  const bar = document.getElementById('persistentDevBar');
+  if (bar) {
+    if (state.isDevActive) {
+      bar.classList.remove('hidden');
+      bar.classList.add('flex');
+    } else {
+      bar.classList.add('hidden');
+      bar.classList.remove('flex');
+    }
+  }
+}
+
+function exitDevMode() {
+  state.isDevActive = false;
+  devForcedNextTier = null;
+  updateDevBarUI();
+  closeDevToolModal();
+  const msg = document.getElementById('couponMsg');
+  if (msg) msg.innerText = '';
+  showToast('✓ Developer mode closed. All overrides cleared.');
 }
 
 // --- BOOTSTRAP INITIALIZATION ---
